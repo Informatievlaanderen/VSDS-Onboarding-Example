@@ -1,0 +1,23 @@
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix :         <https://example.org/ns/mobility#> .
+
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00>
+  a :offStreetParkingGround ;
+  prov:generatedAtTime "2023-11-30T21:45:15+01:00"^^xsd:dateTime ;
+  dcterms:isVersionOf <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal> ;
+  :availablespaces 0 ;
+  :freeparking 1 ;
+  :gentse_feesten "True"^^xsd:string ;
+  :isopennow 1 ;
+  :lastupdate "2023-11-30T21:45:15+01:00"^^xsd:string ;
+  :latitude "51.0325480691"^^xsd:string ;
+  :location [ :lat 5.103255e+1 ; :lon 3.758366e+0 ] ;
+  :longitude "3.7583663653"^^xsd:string ;
+  :name "P+R Gentbrugge Arsenaal"^^xsd:string ;
+  :numberofspaces 0 ;
+  :occupancytrend "unknown"^^xsd:string ;
+  :openingtimesdescription "24/7"^^xsd:string ;
+  :operatorinformation "Mobiliteitsbedrijf Gent"^^xsd:string ;
+  :temporaryclosed 0 .
