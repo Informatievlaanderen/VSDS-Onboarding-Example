@@ -1,4 +1,4 @@
-# Setting up a Minimal LDES Server
+# Setting Up a Minimal LDES Server
 This quick start guide will show you how to setup a minimal LDES server to accept linked data members.
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
