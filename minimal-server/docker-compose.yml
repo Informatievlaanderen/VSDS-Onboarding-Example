@@ -1,0 +1,27 @@
+version: '2.0'
+
+networks:
+  minimal-server:
+    name: minimal-server_ldes-network
+
+services:
+
+  ldes-server:
+    container_name: minimal-server_ldes-server
+    image: ldes/ldes-server:2.4.1-SNAPSHOT
+    volumes:
+      - ./config/application.yml:/application.yml:ro
+    ports:
+      - 9003:8080
+    networks:
+      - minimal-server
+    depends_on:
+      - ldes-mongodb
+
+  ldes-mongodb:
+    container_name: minimal-server_ldes-mongodb
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    networks:
+      - minimal-server
