@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+orchestrator:
+  pipelines:
+
+    - name: p+r-pipeline
+      description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
+      input:
+        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+        adapter:
+          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RdfAdapter
+      transformers:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+          config:
+            member-type: https://example.org/ns/mobility#offStreetParkingGround
+            delimiter: "/"
+            date-observed-property: <https://example.org/ns/mobility#lastupdate>
+            generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
+            versionOf-property: http://purl.org/dc/terms/isVersionOf
+      outputs:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioConsoleOut 

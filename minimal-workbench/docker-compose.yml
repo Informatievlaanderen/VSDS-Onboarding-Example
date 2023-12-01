@@ -1,0 +1,17 @@
+version: '2.0'
+
+networks:
+  minimal-workbench:
+    name: minimal-workbench_ldes-network
+
+services:
+
+  ldio-workbench:
+    container_name: minimal-workbench_ldio-workbench
+    image: ldes/ldi-orchestrator:1.10.0-SNAPSHOT
+    volumes:
+      - ./config/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9004:8080
+    networks:
+      - minimal-workbench 
