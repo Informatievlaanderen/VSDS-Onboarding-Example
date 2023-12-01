@@ -16,7 +16,7 @@ orchestrator:
             member-type: https://example.org/ns/mobility#offStreetParkingGround
             delimiter: "/"
             date-observed-property: <https://example.org/ns/mobility#lastupdate>
-            generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
+            generatedAt-property: https://example.org/ns/mobility#lastupdate
             versionOf-property: http://purl.org/dc/terms/isVersionOf
       outputs:
         - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioConsoleOut 
