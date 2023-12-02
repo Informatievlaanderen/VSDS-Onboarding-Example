@@ -105,7 +105,21 @@ To watch the version object appear in the workbench log
 docker logs -n 30 $(docker ps -q -f "name=ldio-workbench$")
 ```
 
-If you compare the generated member in the container log with the example that we process, you will notice that the state object ID is a property of the version object and the version ID is a combination of that state object ID, the delimiter and the `lastupdate` property.
+You should see the following (clipped to the relevant parts):
+```text
+@prefix mobility:         <https://example.org/ns/mobility#> 
+@prefix park-and-ride-pr: <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/> .
+@prefix rdf:              <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix terms:            <http://purl.org/dc/terms/> .
+
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00>
+        rdf:type                      mobility:offStreetParkingGround ;
+        terms:isVersionOf             park-and-ride-pr:pr-gentbrugge-arsenaal ;
+        mobility:lastupdate           "2023-11-30T21:45:15+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+...
+```
+
+If you compare the generated member in the container log with the example that we process, you will notice that the state object ID (`park-and-ride-pr:pr-gentbrugge-arsenaal` or `http://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal` in full) is a property (`terms:isVersionOf` or `http://purl.org/dc/terms/isVersionOf` in full) of the version object and the version ID (`https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00`) is a combination of that state object ID, the delimiter (`/`) and the `lastupdate` property (`2023-11-30T21:45:15+01:00`).
 
 
 ## That's All Folks
