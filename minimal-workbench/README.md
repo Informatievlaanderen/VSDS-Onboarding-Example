@@ -1,4 +1,4 @@
-# Setting Up a Minimal Workbench
+# Setting Up a Minimal LDIO Workbench
 This quick start guide will show you how to setup a minimal workbench to create version objects from state objects.
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
