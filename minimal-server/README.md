@@ -20,7 +20,7 @@ As mentioned in the pre-requisites, you need some minimal knowledge on Docker Co
 
 If you look into the [Docker Compose file](./docker-compose.yml), you will see that we define one (private) network for our two services: the LDES Server and the MongoDB. This allows the LDES Server to refer to the MongoDB by its service name `ldes-mongodb` but also requires us to map the internal port numbers (respectively 8080 and 27017) to external port numbers (respectively 9003 and 27017) in order to be able to reach the services (respectively `http://localhost:9003` and `mongodb://localhost:27017`, or even `mongodb://locahost`). We'll see in a minute where the internal ports come from. Furthermore the compose file contains names for our containers, the images and tags to use as a definition (i.e. a cookie-cutter) for our containers, a dependency on the MongoDB so the LDES Server is started after the database container, and finally a (read-only) volume mapping of our LDES Server configuration file into the container file-system to allow our LDES Server to use it.
 
-The LDES Server [configuration file](./config/application.yml) is pretty straight-forward as well. It contains the [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier) (`spring.data.mongodb.uri`), basically the database connection string, of our MongoDB database. Note that the format is `<scheme>://<server>:<port>/<database>` where the `<scheme>` is always `mongodb`, the `<server>` is the service name in the composer file (i.e. `ldes-mongodb`), the `<port>` is the default port number `27017` and could be ommitted if we wanted to, and finally, `<database>` is the name of the database that will hold our LDES data, for which we chose `minimal-server`. In addition, we need to specify that our LDES Server uses the MongoDB driver to automatically create the necessary indexes (even on CosmosDB!). For now, we also need to specify the external base path of our LDES Server so that the links within the LDES can be followed. Our current development image works with relative paths a,d does not need this anymore but this feature is not yet available in the Docker Hub images. Soon, very soon! Finally, the configuration file also contains the port (`server.port`) and sub-path (`server.servlet.context-path`) on which the LDES Server is available. Because we do port mapping in the compose file, our LDES Server is available at http://localhost:9003/ldes in this example, but not yet. We need to start our containers first. Ready for some action? Let's get our hands dirty!
+The LDES Server [configuration file](./config/application.yml) is pretty straight-forward as well. It contains the [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier) (`spring.data.mongodb.uri`), basically the database connection string, of our MongoDB database. Note that the format is `<scheme>://<server>:<port>/<database>` where the `<scheme>` is always `mongodb`, the `<server>` is the service name in the composer file (i.e. `ldes-mongodb`), the `<port>` is the default port number `27017` and has been omitted, and finally, `<database>` is the name of the database that will hold our LDES data, for which we chose `minimal-server`. In addition, we need to specify that our LDES Server uses the MongoDB driver to automatically create the necessary indexes (even on CosmosDB!). We also need to specify the external base path of our LDES Server so that the links within the LDES can be followed. Because we do port mapping in the compose file, we set our LDES Server to be available at http://localhost:9003 in this tutorial. But not yet, we first need to start our containers. Ready for some action? Let's get our hands dirty!
 
 ## Systems Ready? 3, 2, 1 .. Ignition!
 Well, enough theory! Let's get this thing going and see how we can actually feed the LDES Server with some data.
@@ -40,16 +40,16 @@ As soon as the systems are started and ready we need to tell our LDES Server wha
 
 To define the LDES:
 ```bash
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
 ```
 
 This may look like a bit of hocus-pocus but it is truly very simple. The [LDES definition](./definitions/occupancy.ttl) is a [turtle file](https://www.w3.org/TR/turtle/) which is a way of serializing [RDF](https://www.w3.org/RDF/). The definition file starts with a few declarations allowing for some short-hand notation so we do not get lost in translation. The other lines are the interesting part. First we start by saying that we define a LDES (`</occupancy> a ldes:EventStream`) and that we want the server to accept members and fetching the LDES on a sub-path (`/occupancy`). Then, we tell it what type our members will be (`sh:targetClass :offStreetParkingGround`, or `http://www.w3.org/ns/shacl#targetClass https://example.org/ns/mobility#offStreetParkingGround` in full). Finally, we tell it that these members are version objects of the state object identified by the member property `dcterms:isVersionOf` and can be distinguised by the member property `prov:generatedAtTime`. Essentially, these properties allow us to group members to find all versions of something respectively to order them to know which member precedes another member.
 
-We can verify that the LDES is actually known to the server by requesting it by its endpoint. This endpoint depends on several things: the port mapping, the base path of the server and the data set sub-path we defined in the LDES definition. In this example it is `http://localhost:9003/ldes/occupancy`.
+We can verify that the LDES is actually known to the server by requesting it by its endpoint. This endpoint depends on several things: the port mapping, the base path of the server and the data set sub-path we defined in the LDES definition. In this example it is `http://localhost:9003/occupancy`.
 
 To check out our LDES:
 ```bash
-curl http://localhost:9003/ldes/occupancy
+curl http://localhost:9003/occupancy
 ```
 
 ## Storing Our First Member
@@ -57,7 +57,7 @@ Once we have defined our LDES we can finally send our first member to the endpoi
 
 To ingest a member:
 ```bash
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/occupancy" -d "@./data/member.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/occupancy" -d "@./data/member.ttl"
 ```
 
 > **Note** that the member is some linked data serialized as a turtle file for which the default file extension is `.ttl` and the mime type is `text/turtle`. The LDES server can accept a few more RDF serialization formats, each identified by their own mime type.
@@ -67,14 +67,14 @@ Now that we have ingested a member, you may wonder how we can check that it is a
 
 To define the LDES view:
 ```bash
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 ```
 
 The view definition is a turtle file very similar to the LDES definition. It contains the view definition (it is a tree node) and how to get to this view (`</occupancy/by-page> a tree:Node`). It set the number of members per fragment (`tree:pageSize "50"^^xsd:integer`). That's all folks!
 
 To check out our LDES:
 ```bash
-curl http://localhost:9003/ldes/occupancy/by-page
+curl http://localhost:9003/occupancy/by-page
 ```
 
 > **Note** that you can create more than one view of a LDES, even for simple pagination by specifying a different view URI and page size. Later when we learn about retention policies and different fragmentation strategies, this may make more sense. For now remember that you can create a view before or after you ingest data, You can delete views and re-create them with different options. For this, you will need to use the administration API. Later, we will show you how to enable the [swagger](https://swagger.io/) to explore this API.
@@ -84,7 +84,7 @@ Depending on the size of the data set the LDES Server magic may take a while to 
 
 To retrieve the data set:
 ```bash
-curl http://localhost:9003/ldes/occupancy/by-page?pageNumber=1
+curl http://localhost:9003/occupancy/by-page?pageNumber=1
 ```
 
 ## All Good Things Must Come To an End

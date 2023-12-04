@@ -1,13 +1,8 @@
-server:
-  port: 8080
-  servlet:
-    context-path: /ldes
-
 spring:
   data:
     mongodb:
-      uri: mongodb://ldes-mongodb:27017/minimal-server
+      uri: mongodb://ldes-mongodb/minimal-server
       auto-index-creation: true
 
 ldes-server:
-  host-name: http://localhost:9003/ldes
+  host-name: http://localhost:9003
