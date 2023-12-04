@@ -1,0 +1,22 @@
+{
+    "name": "P+R Gentbrugge Arsenaal",
+    "lastupdate": "2023-11-30T21:45:15+01:00",
+    "type": "offStreetParkingGround",
+    "openingtimesdescription": "24/7",
+    "isopennow": 1,
+    "temporaryclosed": 0,
+    "operatorinformation": "Mobiliteitsbedrijf Gent",
+    "freeparking": 1,
+    "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal",
+    "numberofspaces": 0,
+    "availablespaces": 0,
+    "occupancytrend": "unknown",
+    "occupation": null,
+    "latitude": "51.0325480691",
+    "longitude": "3.7583663653",
+    "location": {
+        "lon": 3.7583663653,
+        "lat": 51.0325480691
+    },
+    "gentse_feesten": "True"
+}

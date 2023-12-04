@@ -1,0 +1,10 @@
+{
+  "@context": {
+    "@vocab": "https://example.org/ns/mobility#",
+    "urllinkaddress": "@id",
+    "type": "@type",
+    "lastupdate": {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+    }
+  }
+}
