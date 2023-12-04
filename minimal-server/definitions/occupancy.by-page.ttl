@@ -6,5 +6,6 @@
 </occupancy/by-page> a tree:Node ; 
   tree:viewDescription [ 
     a tree:ViewDescription ;
+    tree:fragmentationStrategy () ;
 		tree:pageSize "50"^^xsd:integer
 ] .
