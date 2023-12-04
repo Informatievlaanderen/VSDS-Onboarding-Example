@@ -10,4 +10,4 @@ spring:
       auto-index-creation: true
 
 ldes-server:
-  host-name: http://localhost:9003
+  host-name: http://localhost:9003/ldes
