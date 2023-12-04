@@ -8,7 +8,7 @@ services:
 
   ldes-server:
     container_name: minimal-server_ldes-server
-    image: ldes/ldes-server:2.4.1-SNAPSHOT
+    image: ldes/ldes-server:2.4.1-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./config/application.yml:/application.yml:ro
     ports:
