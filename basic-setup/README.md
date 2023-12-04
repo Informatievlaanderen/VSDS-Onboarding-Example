@@ -149,7 +149,7 @@ curl http://localhost:9003/ldes/occupancy/by-page
 curl http://localhost:9003/ldes/occupancy/by-page?pageNumber=1
 ```
 
-> **Note** that we explicitly noted the three steps to get the the data. Typically a system that wants to replicate and synchronize a LDES only needs access to the LDES itself and can discover the view and subsequently the pages of that view by following the links in the LDES and view. To do so, we can use a [LDES Client](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/core/ldi-inputs/ldes-client) but that is a different tutorial.
+> **Note** that we explicitly noted the three steps to get to the data. Typically a system that wants to replicate and synchronize a LDES only needs access to the LDES itself and can discover the view and subsequently the pages of that view by following the links in the LDES and view. To do so, we can use a [LDES Client](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/core/ldi-inputs/ldes-client) but that is a different tutorial.
 
 ## The Party is Over, Let's Go Home
 You should now know how to publish a simple data set using a LDES Workbench and use a LDES Server to serve this data set using LDES. You learned how to setup a Docker compose file from scratch, how to configure the LDES Server on a different path and port, how to configure a LDIO Workbench to accept non-linked data and send it to the LDES Server. You can now stop all the systems.
