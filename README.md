@@ -11,5 +11,5 @@ To follow along and play with the examples you will need some knowledge of [Dock
 We suggest you look at the examples in the following order, but of course, feel free to skip parts if you are already familiar with some topics.
 
 * [Setting up a minimal LDES server](./minimal-server/README.md)
-* [Setting up a minimal Workbench](./minimal-workbench/README.md)
+* [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md)
 * [Publishing a simple data set with a basic setup](./basic-setup/README.md)
