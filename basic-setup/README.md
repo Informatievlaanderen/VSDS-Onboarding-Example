@@ -35,7 +35,7 @@ After that we add a LDES Server as a service, point it to its configuration file
 ```yaml
   ldes-server:
     container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.4.1-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.5.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./server/application.yml:/application.yml:ro
     ports:
@@ -51,7 +51,7 @@ Finally, we add a LDIO Workbench as a service. It too needs to have access to it
 ```yaml
   ldio-workbench:
     container_name: basic-setup_ldio-workbench
-    image: ldes/ldi-orchestrator:1.10.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:1.11.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:
