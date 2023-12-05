@@ -1,0 +1,52 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
+@prefix rr:     <http://www.w3.org/ns/r2rml#> .
+@prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+@prefix carml:  <http://carml.taxonic.com/carml/> .
+@prefix :       <https://example.org/ns/tutorial/advanced-conversion#> .
+@prefix mv:     <http://schema.mobivoc.org/#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix temp:   <https://temp.org/ns/advanced-compose#> .
+
+:TriplesMap a rr:TriplesMap;
+  rml:logicalSource [
+    a rml:LogicalSource;
+    rml:source [ a carml:Stream ];
+    rml:referenceFormulation ql:CSV
+  ];
+  rr:subjectMap [
+    rr:graphMap [ rr:template "{urllinkaddress}" ];
+    rml:reference "urllinkaddress";
+    rr:class mv:ParkingLot
+  ];
+  rr:predicateObjectMap [
+    rr:predicate temp:name;
+    rr:objectMap [ rml:reference "name" ]
+  ],[
+    rr:predicate temp:lastupdate;
+    rr:objectMap [ rml:reference "lastupdate"; rr:datatype xsd:dateTime ]
+  ], [
+    rr:predicate temp:openingtimesdescription;
+    rr:objectMap [ rml:reference "openingtimesdescription" ]
+  ], [
+    rr:predicate temp:operatorinformation;
+    rr:objectMap [ rml:reference "operatorinformation" ]
+  ], [
+    rr:predicate temp:freeparking;
+    rr:objectMap [ rml:reference "freeparking"; rr:datatype xsd:integer ]
+  ], [
+    rr:predicate temp:numberofspaces;
+    rr:objectMap [ rml:reference "numberofspaces"; rr:datatype xsd:integer ]
+  ], [
+    rr:predicate temp:availablespaces;
+    rr:objectMap [ rml:reference "availablespaces"; rr:datatype xsd:integer ]
+  ], [
+    rr:predicate temp:occupation;
+    rr:objectMap [ rml:reference "occupation"; rr:datatype xsd:integer ]
+  ], [
+    rr:predicate temp:latitude;
+    rr:objectMap [ rml:reference "latitude"; rr:datatype xsd:double ]
+  ], [
+    rr:predicate temp:longitude;
+    rr:objectMap [ rml:reference "longitude"; rr:datatype xsd:double ]
+  ].

@@ -25,3 +25,4 @@ We suggest you look at the examples in the following order, but of course, feel 
 * [Setting up a minimal LDES server](./minimal-server/README.md)
 * [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md)
 * [Publishing a simple data set with a basic setup](./basic-setup/README.md)
+* [Publishing as a standard open linked data model](./advanced-conversion/README.md)
