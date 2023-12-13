@@ -203,7 +203,7 @@ input:
   name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-    interval: PT2M
+    interval: PT1M
   adapter:
     name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
     config:
