@@ -105,7 +105,7 @@ We start by creating a simple intermediate model where we already set the correc
 |latitude _value_|temp:latitude _value_|
 |longitude _value_|temp:longitude _value_|
 
-To create a RML mapping file we need to write the RML rules in [Turtle](https://www.w3.org/TR/turtle/). All the Turtle prefixes should go at the start of the file but for simplicity we'll add the prefixes as we go but we'll start with the most common ones:
+To create a RML mapping file we need to write the RML rules in [Turtle](https://www.w3.org/TR/turtle/). All the Turtle prefixes should go at the start of the file but for simplicity we'll add the prefixes as we go. Let's start with the most common ones:
 
 ```text
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
