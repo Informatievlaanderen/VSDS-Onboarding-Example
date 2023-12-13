@@ -26,3 +26,11 @@ We suggest you look at the examples in the following order, but of course, feel 
 * [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md)
 * [Publishing a simple data set with a basic setup](./basic-setup/README.md)
 * [Publishing as a standard open linked data model](./advanced-conversion/README.md)
+
+We will cover many more topics in the (near) future, so stay tuned to get answers to the following questions:
+* as a Data Publisher, how do I keep my storage and bandwidth costs under control?
+* as a Data Publisher, how do I make my LDES discoverable?
+* as a Data Client, how do I consume an LDES?
+* as a Data Broker, how do I offer different views on an LDES?
+* as a Data Publisher, how do I offer a non-free data set as a LDES?
+* ...
