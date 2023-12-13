@@ -70,13 +70,13 @@ Great! We have determined what will be mapped and how. We're done. Well, not qui
 ## To Push or To Pull, That's the Question
 As mention above, to make it more interesting we will be retrieving the number of available spaces in our parking lots on a regular interval. To do so we can use a component that can poll one or more URLs using HTTP. To do so, we need to replace the `LdioHttpIn` component (push model) that listens for incoming HTTP requests by a `LdioHttpInPoller` component (pull model).
 
-For example, to poll our source URL every 2 minutes we need to configure our pipeline input as:
+For example, to poll our source URL every minute we need to configure our pipeline input as:
 ```yaml
 input:
   name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-    interval: PT2M
+    interval: PT1M
 ```
 
 This will ensure we receive the actual state of our parking lots at regular time intervals, which may or may not have changed since the last time we checked.
