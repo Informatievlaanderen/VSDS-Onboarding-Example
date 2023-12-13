@@ -11,7 +11,7 @@ For the server we only will need to change the actual model. Everything else can
 The workbench is where we need to change a few things: we'll need to transform our custom model to the standard vocabulary. To make it a bit more interesting we'll start from an actual real-time message which contains more than one state object. In fact, we'll be checking for changes on a regular basis. Now we have a real linked data event stream!
 
 ## Towards a More Advanced Model
-As mentioned above, we'll be using an open vocabulary standard to describe our model. This allows us to attach real semantical meaning to it and create interoperability with other Data Publishers that use the same vocabulary.
+As mentioned above, we'll be using an open vocabulary standard to describe our model. This allows us to attach real semantic meaning to it and create interoperability with other Data Publishers that use the same vocabulary.
 
 Understanding and mapping our [source model](https://data.stad.gent/explore/dataset/real-time-bezetting-pr-gent/information/) (check out the dataset schema) to the [target model](https://raw.githubusercontent.com/vocol/mobivoc/develop/diagrams/mobivoc_v1.1.4.png) is the hard part, in particular if we are missing descriptions for the model structure and its properties. Lucky for us, most of the property names are more-or-less self-explanatory.
 
