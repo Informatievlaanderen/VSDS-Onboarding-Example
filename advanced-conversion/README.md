@@ -374,10 +374,13 @@ ldio-workbench:
 To run the LDES server and its storage service (mongo), wait until its up and running, send definitions and then start the workbench:
 ```bash
 clear
+
 docker compose up -d
 while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
+
 docker compose up ldio-workbench -d
 while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 ```
@@ -435,7 +438,7 @@ The last URL will contain our members, looking something like this (limited to o
                 ] ;
         wgs84_pos:lat      "51.024483197"^^<http://www.w3.org/2001/XMLSchema#double> ;
         wgs84_pos:long     "3.69519252261"^^<http://www.w3.org/2001/XMLSchema#double> .
-        
+
 ...
 
 <http://localhost:9003/ldes/occupancy>
@@ -447,10 +450,12 @@ The last URL will contain our members, looking something like this (limited to o
 > **Note** that every minute the pipeline will request the latest state of our parking lots and will create additional version objects. The identity of a member depends only on the `lastupdate` property of our parking lot. If that did not change for a parking lot then the pipeline will create a version object with an identical identity as before. Any such version object will be refused by the LDES server and a warning will be logged in the LDES server log. The new version objects are added to the LDES and become new members.
 
 ## Every End is a New Beginning
-* what have we learned?
-* shut it down 
+You should now know some basics about linked data. You learned how to define a mapping from non-linked data to linked data using RML as well as how to transform a linked data model into a different linked data model. In addition, you learned that you can periodically pull data into a workbench pipeline to create a continuous stream of versions of the state of some system. You can now stop all the systems.
 
+To bring the containers down and remove the private network:
 ```bash
-docker compose rm ldio-workbench --stop --force --volumes;
+docker compose rm ldio-workbench --stop --force --volumes
 docker compose down
 ```
+
+> **Note** that to bring down the workbench we need to stop it and remove the container and associated volumes explicitly because we started it separately.
