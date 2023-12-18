@@ -7,5 +7,5 @@
   tree:viewDescription [ 
     a tree:ViewDescription ;
     tree:fragmentationStrategy () ;
-		tree:pageSize "50"^^xsd:integer
+		tree:pageSize "250"^^xsd:integer
 ] .
