@@ -70,7 +70,7 @@ Great! We have determined what will be mapped and how. We're done. Well, not qui
 ## To Push or To Pull, That's the Question
 As mention above, to make it more interesting we will be retrieving the number of available spaces in our parking lots on a regular interval. To do so we can use a component that can poll one or more URLs using HTTP. To do so, we need to replace the `LdioHttpIn` component (push model) that listens for incoming HTTP requests by a `LdioHttpInPoller` component (pull model).
 
-For example, to poll our source URL every minute we need to configure our pipeline input as:
+For example, to poll our source URL every two minutes we need to configure our pipeline input as:
 ```yaml
 input:
   name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
@@ -404,7 +404,7 @@ The last URL will contain our members, looking something like this (limited to o
 @prefix tree:             <https://w3id.org/tree#> .
 @prefix wgs84_pos:        <http://www.w3.org/2003/01/geo/wgs84_pos#> .
 
-<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo/2023-12-13T12:21:21+01:00>
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2023-12-13T12:21:21+01:00>
         rdf:type           <http://schema.mobivoc.org/#ParkingLot> ;
         rdfs:label         "P+R The Loop" ;
         terms:isVersionOf  park-and-ride-pr:pr-loopexpo ;
@@ -443,11 +443,11 @@ The last URL will contain our members, looking something like this (limited to o
 
 <http://localhost:9003/ldes/occupancy>
         rdf:type     ldes:EventStream ;
-        tree:member  <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo/2023-12-13T12:21:21+01:00>, ...
+        tree:member  <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2023-12-13T12:21:21+01:00>, ...
 ...
 ```
 
-> **Note** that every minute the pipeline will request the latest state of our parking lots and will create additional version objects. The identity of a member depends only on the `lastupdate` property of our parking lot. If that did not change for a parking lot then the pipeline will create a version object with an identical identity as before. Any such version object will be refused by the LDES server and a warning will be logged in the LDES server log. The new version objects are added to the LDES and become new members.
+> **Note** that every two minutes the pipeline will request the latest state of our parking lots and will create additional version objects. The identity of a member depends only on the `lastupdate` property of our parking lot. If that did not change for a parking lot then the pipeline will create a version object with an identical identity as before. Any such version object will be refused by the LDES server and a warning will be logged in the LDES server log. The new version objects are added to the LDES and become new members.
 
 ## Every End is a New Beginning
 You should now know some basics about linked data. You learned how to define a mapping from non-linked data to linked data using RML as well as how to transform a linked data model into a different linked data model. In addition, you learned that you can periodically pull data into a workbench pipeline to create a continuous stream of versions of the state of some system. You can now stop all the systems.

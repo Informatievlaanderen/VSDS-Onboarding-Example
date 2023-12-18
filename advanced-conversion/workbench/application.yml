@@ -10,7 +10,7 @@ orchestrator:
         name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
         config:
           url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-          interval: PT1M
+          interval: PT2M
         adapter:
           name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
           config:
@@ -22,7 +22,7 @@ orchestrator:
         - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
           config:
             member-type: http://schema.mobivoc.org/#ParkingLot
-            delimiter: "/"
+            delimiter: "#"
             date-observed-property: <http://purl.org/dc/terms/modified>
             generatedAt-property: http://purl.org/dc/terms/modified
             versionOf-property: http://purl.org/dc/terms/isVersionOf
