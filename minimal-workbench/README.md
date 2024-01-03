@@ -48,12 +48,12 @@ transformers:
     config:
       member-type: https://example.org/ns/mobility#offStreetParkingGround
       delimiter: "/"
-      date-observed-property: <https://example.org/ns/mobility#lastupdate>
-      generatedAt-property: https://example.org/ns/mobility#lastupdate
+      date-observed-property: <http://www.w3.org/ns/prov#generatedAtTime>
+      generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
       versionOf-property: http://purl.org/dc/terms/isVersionOf
 ```
 
-> **Note** that we used the `https://example.org/ns/mobility#lastupdate` property for both creating the version object ID as well as for the `generatedAt-property`. This will prevent creating another property with the same date/time value.  
+> **Note** that we used the `http://www.w3.org/ns/prov#generatedAtTime` property for both creating the version object ID as well as for the `generatedAt-property`. This will prevent creating another property with the same date/time value.  
 
 Finally, the version object is output to the specified sink. For demo purposes we use a component that simply logs the member to the console, which for a Docker container results in its logs.
 ```yaml
@@ -81,6 +81,7 @@ Now that the workbench is up and running we can send a [message](./data/message.
         "urllinkaddress": "@id",
         "type": "@type",
         "lastupdate": {
+            "@id": "http://www.w3.org/ns/prov#generatedAtTime",
             "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
         }
     },
@@ -107,19 +108,20 @@ docker logs -n 30 $(docker ps -q -f "name=ldio-workbench$")
 
 You should see the following (clipped to the relevant parts):
 ```text
-@prefix mobility:         <https://example.org/ns/mobility#> 
+@prefix mobility:         <https://example.org/ns/mobility#> .
 @prefix park-and-ride-pr: <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/> .
+@prefix prov:             <http://www.w3.org/ns/prov#> .
 @prefix rdf:              <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix terms:            <http://purl.org/dc/terms/> .
 
 <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00>
         rdf:type                      mobility:offStreetParkingGround ;
         terms:isVersionOf             park-and-ride-pr:pr-gentbrugge-arsenaal ;
-        mobility:lastupdate           "2023-11-30T21:45:15+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+        prov:generatedAtTime          "2023-11-30T21:45:15+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
 ...
 ```
 
-If you compare the generated member in the container log with the example that we process, you will notice that the state object ID (`park-and-ride-pr:pr-gentbrugge-arsenaal` or `http://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal` in full) is a property (`terms:isVersionOf` or `http://purl.org/dc/terms/isVersionOf` in full) of the version object and the version ID (`https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00`) is a combination of that state object ID, the delimiter (`/`) and the `lastupdate` property (`2023-11-30T21:45:15+01:00`).
+If you compare the generated member in the container log with the example that we process, you will notice that the state object ID (`park-and-ride-pr:pr-gentbrugge-arsenaal` or `http://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal` in full) is a property (`terms:isVersionOf` or `http://purl.org/dc/terms/isVersionOf` in full) of the version object and the version ID (`https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00`) is a combination of that state object ID, the delimiter (`/`) and the `prov:generatedAtTime` property (`2023-11-30T21:45:15+01:00`).
 
 
 ## That's All Folks
