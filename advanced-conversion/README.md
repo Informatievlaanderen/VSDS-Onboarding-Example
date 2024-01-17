@@ -379,6 +379,7 @@ docker compose up -d
 while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 docker compose up ldio-workbench -d
@@ -388,9 +389,9 @@ while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | gre
 To verify the LDES, view and data:
 ```bash
 clear
-curl http://localhost:9003/ldes/occupancy
-curl http://localhost:9003/ldes/occupancy/by-page
-curl http://localhost:9003/ldes/occupancy/by-page?pageNumber=1
+curl "http://localhost:9003/ldes/occupancy"
+curl "http://localhost:9003/ldes/occupancy/by-page"
+curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
 ```
 
 The last URL will contain our members, looking something like this (limited to one member):

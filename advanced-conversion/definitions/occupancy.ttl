@@ -5,6 +5,6 @@
 @prefix mv:          <http://schema.mobivoc.org/#>
 
 </occupancy> a ldes:EventStream ;
-	tree:shape [ a sh:NodeShape ; sh:targetClass mv:ParkingLot ] ;
+	tree:shape [ a sh:NodeShape ] ;
 	ldes:timestampPath dcterms:modified ;
 	ldes:versionOfPath dcterms:isVersionOf .

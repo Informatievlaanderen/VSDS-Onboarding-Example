@@ -117,21 +117,28 @@ For the transformations steps we keep the same configuration for the version obj
 ## Bringing it All Together
 Now that we have everything set up, let's test the systems. We need to bring all systems up, wait for both the LDIO Workbench and LDES Server to be available, send the LDES and view definitions to the server and finally send the JSON message to the workbench. Then we can retrieve the LDEs, the view and the page containing the actual member.
 
-To run the systems, wait, send definitions and message:
+To run the systems, wait, send definitions and message (execute in a **bash** shell):
 ```bash
 clear
+
 # bring the systems up
 docker compose up -d
+
 # wait for the workbench
 while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+
 # wait for the server
 while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+
 # define the LDES
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+
 # define the view
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
+
 # send the message
 curl -X POST -H "Content-Type: application/json" "http://localhost:9004/p+r-pipeline" -d "@./data/message.json"
+
 ```
 
 > **Note** that we send the definitions to `http://localhost:9003/ldes` because we have defined `server.servlet.context-path: /ldes`.
@@ -141,12 +148,16 @@ curl -X POST -H "Content-Type: application/json" "http://localhost:9004/p+r-pipe
 To verify the LDES, view and data:
 ```bash
 clear
+
 # get the LDES
-curl http://localhost:9003/ldes/occupancy
+curl "http://localhost:9003/ldes/occupancy"
+
 # get the view
-curl http://localhost:9003/ldes/occupancy/by-page
+curl "http://localhost:9003/ldes/occupancy/by-page"
+
 # get the data
-curl http://localhost:9003/ldes/occupancy/by-page?pageNumber=1
+curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
+
 ```
 
 > **Note** that we explicitly noted the three steps to get to the data. Typically a system that wants to replicate and synchronize a LDES only needs access to the LDES itself and can discover the view and subsequently the pages of that view by following the links in the LDES and view. To do so, we can use a [LDES Client](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/core/ldi-inputs/ldes-client) but that is a different tutorial.
