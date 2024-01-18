@@ -138,7 +138,6 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/ap
 
 # send the message
 curl -X POST -H "Content-Type: application/json" "http://localhost:9004/p+r-pipeline" -d "@./data/message.json"
-
 ```
 
 > **Note** that we send the definitions to `http://localhost:9003/ldes` because we have defined `server.servlet.context-path: /ldes`.
@@ -157,7 +156,6 @@ curl "http://localhost:9003/ldes/occupancy/by-page"
 
 # get the data
 curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
-
 ```
 
 > **Note** that we explicitly noted the three steps to get to the data. Typically a system that wants to replicate and synchronize a LDES only needs access to the LDES itself and can discover the view and subsequently the pages of that view by following the links in the LDES and view. To do so, we can use a [LDES Client](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/core/ldi-inputs/ldes-client) but that is a different tutorial.
