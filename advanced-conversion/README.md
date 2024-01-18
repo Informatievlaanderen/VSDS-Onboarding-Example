@@ -76,10 +76,10 @@ input:
   name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-    interval: PT1M
+    cron: 0 * * * * *
 ```
 
-This will ensure we receive the actual state of our parking lots at regular time intervals, which may or may not have changed since the last time we checked.
+This will ensure we receive the actual state of our parking lots at regular time intervals (e.g. every minute), which may or may not have changed since the last time we checked.
 
 > **Note** that we request the data as CSV but alternatively we could have used JSON or GeoJSON. We still need to configure an adapter to convert the received CSV message to linked data. We'll do that next.
 
@@ -196,14 +196,14 @@ volumes:
     - ./workbench/config:/ldio/config:ro
 ```
 
-We also need to change our workbench pipeline to use the above RML mapping file and to include the RML mapping component (`RmlAdapter` instead of the `JsonLdAdapter` used in the basic setup). Our workbench pipeline input component is now complete and looks like this:
+We also need to change our workbench pipeline to use the above RML mapping file and to include the RML mapping component (`RmlAdapter` instead of the `JsonLdAdapter` used in the basic setup). Our workbench pipeline input component is now complete and looks like this (polls every 2 minutes):
 
 ```yaml
 input:
   name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-    interval: PT1M
+    cron: 0 */2 * * * *
   adapter:
     name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
     config:
@@ -266,7 +266,7 @@ PREFIX mv:  <http://schema.mobivoc.org/#>
 ?id rdf:type mv:ParkingLot
 ```
 
-> **Note** that the syntax for our prefix definitions is slightly different: we use `PREFIX` instead of `@prefix` and there is no dot (`.`) at the end of the line.
+> **Note** that the syntax for our prefix definitions is slightly different than for the Turtle files: we use `PREFIX` instead of `@prefix` and there is no dot (`.`) at the end of the line.
 
 The full SPARQL query would be:
 ```text
@@ -343,13 +343,20 @@ In addition, as our target model has changed, we need to fix the transformation 
 ```
 
 And also the [definition of the LDES](./definitions/occupancy.ttl) to reflect the correct target class:
-
 ```text
 @prefix mv:          <http://schema.mobivoc.org/#>
 
 </occupancy> a ldes:EventStream ;
 	tree:shape [ a sh:NodeShape ; sh:targetClass mv:ParkingLot ] ;
 ```
+
+> **Note** that from LDES server v2.7.0 on you do not need to define the target class as the LDES server allows us to ingest entities with any type allowing for mixed streams of entity versions. A small step for the team but a giant step for data publishers because they now have the choice to host one LDES per entity type, one LDES for all their entities or any other configuration of their choosing. The LDES definition now becomes (we simply drop the `sh:targetClass mv:ParkingLot` triple):
+> ```text
+> @prefix mv:          <http://schema.mobivoc.org/#>
+> 
+> </occupancy> a ldes:EventStream ;
+> 	tree:shape [ a sh:NodeShape ] ;
+> ```
 
 > **Note** that in the [complete mapping](./workbench/config/intermediate-to-target.rq) when we query the properties from our source model that almost all of these query lines are wrapped by an `optional { ... }` construct. The reason for this is that any of these triples may be missing. Remember that the `WHERE` clause is in essence a filter on the collection of source triples, where each query line refines the subset of results from the previous query line. Therefore, if we do not use `optional` then the query returns no results and hence no target entity is constructed.
 
@@ -375,16 +382,34 @@ To run the LDES server and its storage service (mongo), wait until its up and ru
 ```bash
 clear
 
+# start and wait for the server and database systems
 docker compose up -d
 while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 
+# define the LDES and the view
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
-
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
+# start and wait for the workbench
 docker compose up ldio-workbench -d
 while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 ```
+
+> **Note** that it may take up to two minutes before you see any data as the polling component runs every 2 minutes. You can see this in the docker logs for the workbench e.g. (notice the timestamps at the start of the lines):
+>```
+> 2024-01-18T13:04:34.805Z  INFO 1 --- [           main] b.v.i.ldes.ldio.Application              : Started Application in 5.447 seconds (process running for 6.163)
+> 2024-01-18T13:06:00.845Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-01-18T14:02:57+01:00
+> 2024-01-18T13:06:00.979Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal#2024-01-18T14:02:57+01:00
+> 2024-01-18T13:06:01.036Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-wondelgem-industrieweg#2024-01-18T14:02:34+01:00
+> 2024-01-18T13:06:01.078Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2024-01-18T14:02:57+01:00
+> 2024-01-18T13:06:01.114Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-oostakker#2024-01-18T14:02:57+01:00
+>```
+
+To view the docker logs yourself you can execute the following (in a bash shell):
+```bash
+docker logs -f $(docker ps -q -f "name=ldio-workbench$")
+```
+This will display and keep following the workbench logs for updates. Press `CTRL-C` to stop following the logs.
 
 To verify the LDES, view and data:
 ```bash
