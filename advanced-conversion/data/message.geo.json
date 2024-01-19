@@ -1,0 +1,145 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+      {
+          "type": "Feature",
+          "geometry": {
+              "type": "Point",
+              "coordinates": [
+                  3.71138627257,
+                  51.0985019636
+              ]
+          },
+          "properties": {
+              "name": "P+R Wondelgem",
+              "lastupdate": "2024-01-19T08:02:48+01:00",
+              "type": "offStreetParkingGround",
+              "openingtimesdescription": "24/7",
+              "isopennow": 1,
+              "temporaryclosed": 0,
+              "operatorinformation": "Mobiliteitsbedrijf Gent",
+              "freeparking": 1,
+              "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-wondelgem-industrieweg",
+              "numberofspaces": 62,
+              "availablespaces": 33,
+              "occupancytrend": "unknown",
+              "occupation": 46,
+              "latitude": "51.0985019636",
+              "longitude": "3.71138627257",
+              "gentse_feesten": "False"
+          }
+      },
+      {
+          "type": "Feature",
+          "geometry": {
+              "type": "Point",
+              "coordinates": [
+                  3.7583663653,
+                  51.0325480691
+              ]
+          },
+          "properties": {
+              "name": "P+R Gentbrugge Arsenaal",
+              "lastupdate": "2024-01-19T08:03:30+01:00",
+              "type": "offStreetParkingGround",
+              "openingtimesdescription": "24/7",
+              "isopennow": 1,
+              "temporaryclosed": 0,
+              "operatorinformation": "Mobiliteitsbedrijf Gent",
+              "freeparking": 1,
+              "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal",
+              "numberofspaces": 280,
+              "availablespaces": 0,
+              "occupancytrend": "unknown",
+              "occupation": 100,
+              "latitude": "51.0325480691",
+              "longitude": "3.7583663653",
+              "gentse_feesten": "True"
+          }
+      },
+      {
+          "type": "Feature",
+          "geometry": {
+              "type": "Point",
+              "coordinates": [
+                  3.77726718837,
+                  51.0739904088
+              ]
+          },
+          "properties": {
+              "name": "P+R Oostakker",
+              "lastupdate": "2024-01-19T08:03:30+01:00",
+              "type": "offStreetParkingGround",
+              "openingtimesdescription": "24/7",
+              "isopennow": 1,
+              "temporaryclosed": 0,
+              "operatorinformation": "Mobiliteitsbedrijf Gent",
+              "freeparking": 1,
+              "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-oostakker",
+              "numberofspaces": 201,
+              "availablespaces": 183,
+              "occupancytrend": "unknown",
+              "occupation": 8,
+              "latitude": "51.0739904088",
+              "longitude": "3.77726718837",
+              "gentse_feesten": "True"
+          }
+      },
+      {
+          "type": "Feature",
+          "geometry": {
+              "type": "Point",
+              "coordinates": [
+                  3.68175794804,
+                  51.0674048936
+              ]
+          },
+          "properties": {
+              "name": "P+R Bourgoyen",
+              "lastupdate": "2024-01-19T08:03:30+01:00",
+              "type": "offStreetParkingGround",
+              "openingtimesdescription": "24/7",
+              "isopennow": 1,
+              "temporaryclosed": 0,
+              "operatorinformation": "Mobiliteitsbedrijf Gent",
+              "freeparking": 1,
+              "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen",
+              "numberofspaces": 255,
+              "availablespaces": 204,
+              "occupancytrend": "unknown",
+              "occupation": 20,
+              "latitude": "51.0674048936",
+              "longitude": "3.68175794804",
+              "gentse_feesten": "False"
+          }
+      },
+      {
+          "type": "Feature",
+          "geometry": {
+              "type": "Point",
+              "coordinates": [
+                  3.69519252261,
+                  51.024483197
+              ]
+          },
+          "properties": {
+              "name": "P+R The Loop",
+              "lastupdate": "2024-01-19T08:03:30+01:00",
+              "type": "offStreetParkingGround",
+              "openingtimesdescription": "24/7",
+              "isopennow": 1,
+              "temporaryclosed": 0,
+              "operatorinformation": "Mobiliteitsbedrijf Gent",
+              "freeparking": 1,
+              "urllinkaddress": "https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo",
+              "numberofspaces": 168,
+              "availablespaces": 90,
+              "occupancytrend": "unknown",
+              "occupation": 46,
+              "latitude": "51.024483197",
+              "longitude": "3.69519252261",
+              "gentse_feesten": "False"
+          }
+      }
+  ]
+}
