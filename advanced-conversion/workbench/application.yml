@@ -4,8 +4,9 @@ server:
 orchestrator:
   pipelines:
 
+    # This is a pipeline for demonstrating CSV to linked data conversion using RML
     - name: p+r-pipeline
-      description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
+      description: "Polls for CSV park-and-ride data, converts to linked data, creates versions & sends to LDES server."
       input:
         name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
         config:
@@ -14,7 +15,7 @@ orchestrator:
         adapter:
           name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
           config:
-            mapping: ./config/source-to-intermediate.ttl
+            mapping: ./config/csv-to-intermediate.ttl
       transformers:
         - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
           config:
