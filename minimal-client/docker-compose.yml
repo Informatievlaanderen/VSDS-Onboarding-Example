@@ -7,7 +7,7 @@ services:
     image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     environment:
       - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-      - WEBHOOK_URL=${WEBHOOK_URL}
+      - SINK_URL=${SINK_URL}
       - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-50}
     volumes:
       - ./application.yml:/ldio/application.yml:ro

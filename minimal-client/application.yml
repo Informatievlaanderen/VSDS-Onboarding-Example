@@ -9,17 +9,13 @@ orchestrator:
       description: "Requests all existing members from a public LDES server and keeps following it for changes, sending each member as-is to a webhook"
       input:
         name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
-        adapter:
-          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RdfAdapter
         config:
           url: ${LDES_SERVER_URL}
           sourceFormat: application/n-quads
       outputs:
         - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
           config:
-            endpoint: ${WEBHOOK_URL}
+            endpoint: ${SINK_URL}
             rate-limit:
               enabled: true
               max-requests-per-minute: ${MAX_REQUESTS_PER_MINUTE}
-            rdf-writer:
-              content-type: text/turtle
