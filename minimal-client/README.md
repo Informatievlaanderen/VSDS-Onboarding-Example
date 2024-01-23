@@ -1,4 +1,4 @@
-# Simple LDES Client
+# Setting Up a Minimal LDES Client
 ```bash
 clear
 docker compose --env-file user.env up
