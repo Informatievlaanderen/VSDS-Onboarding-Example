@@ -114,3 +114,5 @@ docker compose rm ldio-workbench --stop --force --volumes
 ```
 
 Of course, you also need to bring down the [LDES Server and related containers](../advanced-conversion/README.md#every-end-is-a-new-beginning).
+
+Most webhook services will automatically delete the requests are some time but it is best to cleanup yourself. For webhook.site choose the `Delete all requests...` option under the `More` menu and confirm the removal of all requests. Yopu can now close the browser window.
