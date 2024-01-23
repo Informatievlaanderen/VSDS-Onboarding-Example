@@ -103,7 +103,7 @@ basic-client_ldio-workbench  | 2024-01-23T20:07:17.304Z  INFO 1 --- [pool-6-thre
 basic-client_ldio-workbench  | 2024-01-23T20:07:17.685Z  INFO 1 --- [pool-6-thread-1] l.c.s.StartingTreeNodeFinder             : Parsing response for: http://localhost:9003/ldes/occupancy/by-page
 ```
 
-Almost immediately you should see the members start appearing in the online sink. After a little bit, the sink stops receiving members. You have now succesfully _replicated_ the data collection. However, our [parking lot workbench](../advanced-conversion/workbench/application.yml) polls the source system frequently and generates 5 new version objects (almost) on each run. So, every 2 minutes you can see these new versions appear in the sink. This are now _synchronizing_ the data collection forever. That is, until the LDES Server system is stopped.
+Almost immediately you should see the members start appearing in the online sink. After a little bit, the sink stops receiving members. You have now succesfully _replicated_ the data collection. However, our [parking lot workbench](../advanced-conversion/workbench/application.yml) polls the source system frequently and generates 5 new version objects (almost) on each run. So, every 2 minutes you can see these new versions appear in the sink. You are now _synchronizing_ the data collection forever, that is, until the LDES Server system is stopped.
 
 ## And Now, The End Is Near
 Because we did not run the docker container as a deamon, in order to stop the container you need to press `CTRL-C`.
