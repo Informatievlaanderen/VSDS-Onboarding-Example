@@ -1,0 +1,11 @@
+@prefix ldes:        <https://w3id.org/ldes#> .
+@prefix tree:        <https://w3id.org/tree#>.
+@prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
+@prefix ldes:        <https://w3id.org/ldes#> .
+
+</occupancy/by-page> a tree:Node ; 
+  tree:viewDescription [ 
+    a tree:ViewDescription ;
+    tree:fragmentationStrategy () ;
+		tree:pageSize "250"^^xsd:integer
+] .

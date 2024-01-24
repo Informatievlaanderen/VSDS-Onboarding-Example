@@ -1,0 +1,7 @@
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+
+[] a dcat:Dataset ;
+   dcterms:title "Real time occupancy P+R (Gent) as LDES"@en ;
+   dcterms:description "LDES containing the occupancy of the various park+rides in Ghent in real time"@en .
+   
