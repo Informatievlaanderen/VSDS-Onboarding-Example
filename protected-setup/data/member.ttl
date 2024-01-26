@@ -1,0 +1,40 @@
+@prefix park-and-ride-pr: <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/> .
+@prefix rdf:              <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:             <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix terms:            <http://purl.org/dc/terms/> .
+@prefix wgs84_pos:        <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal#2024-01-26T21:18:46+01:00>
+        rdf:type           <http://schema.mobivoc.org/#ParkingLot>;
+        rdfs:label         "P+R Gentbrugge Arsenaal";
+        terms:isVersionOf  park-and-ride-pr:pr-gentbrugge-arsenaal;
+        terms:modified     "2024-01-26T21:18:46+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>;
+        <http://schema.mobivoc.org/#capacity>
+                [ rdf:type  <http://schema.mobivoc.org/#Capacity>;
+                  <http://schema.mobivoc.org/#totalCapacity>
+                          280
+                ];
+        <http://schema.mobivoc.org/#capacity>
+                [ rdf:type  <http://schema.mobivoc.org/#RealTimeCapacity>;
+                  <http://schema.mobivoc.org/#currentValue>
+                          0
+                ];
+        <http://schema.mobivoc.org/#operatedBy>
+                [ rdf:type    terms:Agent , <http://schema.org/Organization>;
+                  rdfs:label  "Mobiliteitsbedrijf Gent"
+                ];
+        <http://schema.mobivoc.org/#price>
+                [ rdf:type  <http://schema.org/PriceSpecification>;
+                  <http://schema.mobivoc.org/#freeOfCharge>
+                          1
+                ];
+        <http://schema.mobivoc.org/#rateOfOccupancy>
+                100;
+        <http://schema.mobivoc.org/#url>
+                park-and-ride-pr:pr-gentbrugge-arsenaal;
+        <http://schema.org/openingHoursSpecification>
+                [ rdf:type    <http://schema.org/OpeningHoursSpecification>;
+                  rdfs:label  "24/7"
+                ];
+        wgs84_pos:lat      "51.0325480691"^^<http://www.w3.org/2001/XMLSchema#double>;
+        wgs84_pos:long     "3.7583663653"^^<http://www.w3.org/2001/XMLSchema#double> .

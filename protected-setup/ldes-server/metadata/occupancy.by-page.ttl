@@ -1,0 +1,7 @@
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+
+[] a dcat:DataService ;
+  dcterms:title "Real time occupancy P+R (Gent) by page"@en ;
+  dcterms:description "Paged view for the occupancy of the various park+rides in Ghent in real time"@en .
+  

@@ -1,0 +1,7 @@
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+
+[] a dcat:Catalog ;
+  dcterms:title "Catalog for Publishing And Accessing a Protected LDES"@en ;
+  dcterms:description "Offers an overview of the dataset(s) and data service(s) needed for the tutorial 'Publishing And Accessing a Protected LDES'."@en .
+  

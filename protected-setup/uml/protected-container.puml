@@ -1,0 +1,26 @@
+@startuml Protected Setup - Container Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Protected Setup - Container Diagram
+
+System_Ext(source, "Data Owner System", "Provides the non-linked data")
+System_Boundary(data_publisher, "Data Publisher Systems") {
+    Container(server_workbench, "Server Workbench", "docker container", "Transforms non-linked data to linked data LDES members")
+    Container(ldes_server, "LDES Server", "docker container", "Ingests LDES members and serves LDES views")
+    Container(server_database, "Server Database", "Contains LDES members and other information")
+    Container(reverse_proxy, "Reverse Proxy", "Protects access to the LDES Server")
+}
+System_Boundary(data_client, "Data Client Systems") {
+    Container(client_workbench, "Client Workbench", "docker container", "Replicates and synchronizes LDES members")
+}
+System_Ext(sink, "Sink System", "Receives the LDES members")
+
+Rel_L(server_workbench, source, "polls for changes periodically")
+Rel_R(server_workbench, ldes_server, "sends LDES members")
+Rel_R(ldes_server, server_database, "stores LDES members")
+
+Rel_U(reverse_proxy, ldes_server, "forwards requests to LDES Server")
+Rel_U(client_workbench, reverse_proxy, "requests LDES view nodes and follows for changes")
+Rel_R(client_workbench, sink, "sends LDES members")
+
+@enduml
