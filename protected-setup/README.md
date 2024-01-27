@@ -1,5 +1,5 @@
 # Publishing and Accessing a Protected LDES
-This tutorial will show you how to protect a LDES in order to prevent unauthorized access to a proprietary (or a public) data collection. In addition it will show you how to access such a protected LDES.
+This tutorial will show you how to protect a LDES in order to prevent unauthorized access to a proprietary (or a public) data collection. It will also show how to expose the available LDES Server API as well as add and expose some metadata (using DCAT). In addition it will show you how to access such a protected LDES.
 
 ## I’ll Protect You From the Hooded Claw
 The LDES Server allows you to ingest a data collection and offers one or more views which allows replicating the data collection in whole or a part of it. However, not all data collection can be made publicly available. You need to protect those data collection in some way to prevent unauthorized access. What you will typically do is configure some security system which expects a Data Client to identify itself (_authentication_) after which the security system verifies it the Data Client has access to the requested data (_authorization_).
@@ -12,7 +12,7 @@ This technique may also apply to a commercial data collection: as a Data Publish
 
 We will show how you can protect a LDES and what changes are needed to retrieve such a LDES. We will use existing tutorials to kickstart our setup. To create and feed our LDES we can use the [advanced conversion setup](../advanced-conversion/README.md) and to retrieve it we can use the [minimal client](../minimal-client/README.md). Later we will add a reverse proxy to shield the LDES Server from the outside and configure things in such a way that we have controlled access to both LDES Server administration and LDES replication & synchronization. Obviously we will have to make changes on both the Data Publisher and the Data Client side.
 
-But first, let us setup the system without access limitation first to ensure everything works fine witout. As usual, we start by creating a docker compose file containing the services which we need.
+But first, let us setup the system without access limitation first to ensure everything works fine. As usual, we start by creating a docker compose file containing the services that we need.
 
 At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
 
@@ -119,9 +119,9 @@ docker compose down
 
 ## It’s a Well Kept Secret
 Now that we have a unprotected but working setup we can make the necessary changes to enforce security. We will need to do a few things:
-* add a reverse proxy that will accept the LDES requests on the server's behalf, check authentication & authorization and forward the request or return an (unauthorized) error
+* add a reverse proxy that will accept the LDES requests on the server's behalf, check authentication & authorization and forward the request or return an access error
 * not expose the LDES Server outside of the internal docker network so that the only way to access it is through the reverse proxy
-* change the Data Client (and Publisher) configuration to retrieve the LDES through the reverse proxy
+* change the Data Client (and Data Publisher) configuration to retrieve the LDES through the reverse proxy
 
 The following illustration shows the setup after adding such a reverse proxy:
 ![container diagram](./uml/protected-container.png)
@@ -145,9 +145,9 @@ docker compose up -d
 while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 ```
 
-Once started point your browser to http://localhost:9003/ldes/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/ldes/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the `base` API displayed in the main window.
+Once started point your browser to http://localhost:9003/ldes/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/ldes/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the base API displayed in the main window.
 
-When we look at this base API, we see that there is one endpoint for the ingest that expects a `POST` to an endpoint. Obviously we do not want anybody else than the server workbench to push members to our ingest endpoint so we need to disallow this through the reverse proxy. For now, we can do that by disallowing `POST` requests through the reverse proxy but later we will see that we need to make an exception for seeding the LDES definitions, which also use `POST` requests towards the administrative API.
+When we look at this base API, we see that there is one endpoint for the ingest that expects a `POST` to an endpoint. Obviously we do not want anybody else than the server workbench to push members to our ingest endpoint so we need to disallow this through the reverse proxy. We can do that by disallowing `POST` requests through the reverse proxy but we need to ensure that we can still seed the LDES definitions, which also use `POST` requests towards the administrative API.
 
 Next we see that the LDES Server exposes an endpoint to retrieve metadata at the root `/` as well as the various data collections at `/{collection-name}` and their respective views at  `/{collection-name}/{view-name}`, all using `GET` requests. Most likely we want the metadata to be publicly accessible so that our available data collections can be discovered. In other words, we want metadata crawlers to be able to retrieve the metadata (typically [DCAT](https://en.wikipedia.org/wiki/Data_Catalog_Vocabulary) information) in an unsecured way so that we get some exposure for our data collections. Now, as for the collections and views themselves, we can setup the accessibility as required by our use cases. For this tutorial we will assume that only a few clients can access our LDES and view so we will protect them with an API key. In fact, we will assign one API key per client so we can distinguish them for statistical reasons (e.g. to enforce a fair use policy).
 
@@ -167,7 +167,7 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/ap
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./ldes-server/metadata/occupancy.by-page.ttl"
 ```
 
-Now you can get the full DCAT if you request the root http://localhost:9003/ldes. It is a mixed of the metadata definitions which we uploaded and server generated data, resulting in something like this:
+Now you can get the full DCAT if you request the root http://localhost:9003/ldes. It is a mix of the metadata definitions which we uploaded and server generated data, resulting in something like this:
 ```text
 @prefix by-page:   <http://localhost:9003/ldes/occupancy/by-page/> .
 @prefix dcat:      <http://www.w3.org/ns/dcat#> .
@@ -254,7 +254,7 @@ We have setup the reverse proxy to remap the LDES Server endpoints (all based at
 * the admin API at `/admin`
 * the LDES, the view and its nodes at `/feed`
 
-Let us see if we can retrieve the metadata, the LDES, the view, the admin API and the swagger UI if we do not authenticate with an API key:
+If we do not pass an API key we can retrieve only the metadata and not the LDES, the view, the admin API and the swagger UI:
 ```bash
 clear
 curl -I http://localhost:9005/
@@ -262,7 +262,7 @@ curl -I http://localhost:9005/feed/occupancy
 curl -I http://localhost:9005/feed/occupancy/by-page
 curl -I http://localhost:9005/admin/api/v1/eventstreams
 ```
-Public access is only allowed (HTTP 200) for the first call, all others are unauthenticated (HTTP 401).
+Public access is only allowed (HTTP 200) for the first call, all other calls are unauthenticated (HTTP 401).
 > **Note** that we pass `-I` in order to only retrieve the headers, not the actual content. 
 
 If we pass a client API key we can retrieve the metadata, the LDES and the view but we cannot use the admin API:
@@ -273,10 +273,10 @@ curl -I -H "x-api-key: client-one-secret" http://localhost:9005/feed/occupancy
 curl -I -H "x-api-key: client-one-secret" http://localhost:9005/feed/occupancy/by-page
 curl -I -H "x-api-key: client-one-secret" http://localhost:9005/admin/api/v1/eventstreams
 ```
-All but the last call should success (HTTP 200) while the last one is forbidden (HTTP 403) because we are authenticated but not authorized to use the admin API.
+All but the last call should succeed (HTTP 200) while the last one is forbidden (HTTP 403) because we are authenticated but not authorized to use the admin API.
 > **Note** that we need to pass the API key using the header `x-api-key: <well-known-key>`.
 
-Finally, we can pass with the admin API key.
+Finally, if we pass the admin API key all calls should be possible:
 ```bash
 clear
 curl -I -H "x-api-key: admin-secret" http://localhost:9005/
@@ -342,13 +342,13 @@ input:
       api-key: client-two-secret
 ```
 
-Time to put it all together, but first bring down all systems so we can start with a fresh slate:
+Show time! But first bring down all systems so we can start with a clean slate:
 ```bash
 docker compose down
 ```
 
 ## Putting It All Together
-To launch all the systems and configure it all run the following:
+To launch all the systems and configure it all you can run the following:
 ```bash
 clear
 
@@ -377,7 +377,7 @@ while ! docker logs $(docker ps -q -f "name=client-workbench$") 2> /dev/null | g
 It all goes well (and it should!) you will see the LDES members appear in the sink.
 
 ## It's Been a Long Day
-We have shown you how to enable the swagger UI, how to provide metadata for your LDES views and, of course, how to access a protected LDES. In addition we have shown you how you can protect a LDES using a API key but if you require a stronger way of securing access have a look at other authentication and authorization mechanisms. The [documentation](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/ldio/ldio-core/ldio-http-requester) explains how to configure the LDES client in case you need to access a OAuth2/OpenID protected LDES.
+We have shown you how to enable the swagger UI, how to provide metadata for your LDES views and, of course, how to access a protected LDES. In addition we have shown you how you can protect a LDES using a API key but if you require a stronger way of securing access have a look at other authentication and authorization mechanisms. The [documentation](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/ldio/ldio-core/ldio-http-requester) explains how to configure the LDES client in case you need to access an OAuth2/OpenID protected LDES.
 
 Now that you have verified that the members appear in the sink you can shutdown the systems and remove the private network using:
 ```bash
