@@ -1,0 +1,88 @@
+version: '2.0'
+
+networks:
+  common-network:
+    name: broker-setup_common-network
+
+services:
+
+  ### -- Publisher --
+
+  publisher-database:
+    container_name: protected-setup_publisher-database
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    networks:
+      - common-network
+
+  publisher-workbench:
+    container_name: protected-setup_publisher-workbench
+    image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    volumes:
+      - ./publisher-workbench/config:/ldio/config:ro
+      - ./publisher-workbench/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9004:80
+    networks:
+      - common-network 
+    profiles:
+      - delay-started
+
+  publisher-server:
+    container_name: protected-setup_publisher-server
+    # image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ghcr.io/informatievlaanderen/ldes-server:latest
+    volumes:
+      - ./publisher-server/application.yml:/application.yml:ro
+    ports:
+      - 9003:80
+    networks:
+      - common-network
+    depends_on:
+      - publisher-database
+    environment:
+      - MANAGEMENT_TRACING_ENABLED=false # TODO: remove this when pull-based tracing implemented
+      - LDES_SERVER_HOST_NAME=http://publisher-server/ldes
+
+
+  ### -- Publisher --
+
+  broker-database:
+    container_name: protected-setup_broker-database
+    image: mongo:latest
+    ports:
+      - 27018:27017
+    networks:
+      - common-network
+
+  broker-workbench:
+    container_name: protected-setup_broker-workbench
+    image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    volumes:
+      - ./broker-workbench/config:/ldio/config:ro
+      - ./broker-workbench/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9002:80
+    networks:
+      - common-network 
+    profiles:
+      - delay-started
+    environment:
+      - LDES_SERVER_URL=http://publisher-server/ldes/occupancy/by-page
+
+  broker-server:
+    container_name: protected-setup_broker-server
+    # image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ghcr.io/informatievlaanderen/ldes-server:latest
+    volumes:
+      - ./broker-server/application.yml:/application.yml:ro
+    ports:
+      - 9001:80
+    networks:
+      - common-network
+    depends_on:
+      - broker-database
+    environment:
+      - MANAGEMENT_TRACING_ENABLED=false # TODO: remove this when pull-based tracing implemented
+      - LDES_SERVER_HOST_NAME=http://localhost:9001/ldes

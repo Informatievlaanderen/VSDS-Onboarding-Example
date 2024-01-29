@@ -1,0 +1,35 @@
+server:
+  port: 80
+
+orchestrator:
+  pipelines:
+
+    # This is a pipeline for demonstrating CSV to linked data conversion using RML
+    - name: p+r-pipeline
+      description: "Polls for CSV park-and-ride data, converts to linked data, creates versions & sends to LDES server."
+      input:
+        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
+        config:
+          url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
+          cron: 30 * * * * *
+        adapter:
+          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
+          config:
+            mapping: ./config/csv-to-intermediate.ttl
+      transformers:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+          config:
+            query: ./config/intermediate-to-target.rq
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+          config:
+            member-type: http://schema.mobivoc.org/#ParkingLot
+            delimiter: "#"
+            date-observed-property: <http://purl.org/dc/terms/modified>
+            generatedAt-property: http://purl.org/dc/terms/modified
+            versionOf-property: http://purl.org/dc/terms/isVersionOf
+      outputs:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+          config:
+            endpoint: http://publisher-server/ldes/occupancy
+            rdf-writer:
+              content-type: application/n-quads

@@ -1,0 +1,20 @@
+@prefix tree:         <https://w3id.org/tree#>.
+@prefix xsd:          <http://www.w3.org/2001/XMLSchema#> .
+@prefix ldes:         <https://w3id.org/ldes#> .
+@prefix geosparql:	  <http://www.opengis.net/ont/geosparql#> .
+@prefix terms:        <http://purl.org/dc/terms/> .
+
+</occupancy/by-parking> a tree:Node ; 
+  tree:viewDescription [ 
+		a tree:ViewDescription ;
+    tree:fragmentationStrategy ([
+			a tree:ReferenceFragmentation ;
+			tree:fragmentationPath terms:isVersionOf ; 
+			tree:fragmentationKey "parking-lot"
+		]) ;
+		tree:pageSize "15"^^xsd:integer ;
+		ldes:retentionPolicy [
+			a ldes:LatestVersionSubset ;
+			ldes:amount 15 ;
+		]
+	] .

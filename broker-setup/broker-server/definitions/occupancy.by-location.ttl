@@ -1,0 +1,19 @@
+@prefix tree:         <https://w3id.org/tree#>.
+@prefix xsd:          <http://www.w3.org/2001/XMLSchema#> .
+@prefix ldes:         <https://w3id.org/ldes#> .
+@prefix geosparql:	  <http://www.opengis.net/ont/geosparql#> .
+
+</occupancy/by-location> a tree:Node ; 
+  tree:viewDescription [ 
+		a tree:ViewDescription ;
+    tree:fragmentationStrategy ([
+			a tree:GeospatialFragmentation ;
+			tree:maxZoom "14"^^xsd:integer ;
+			tree:fragmentationPath geosparql:asWKT 
+		]) ;
+		tree:pageSize "100"^^xsd:integer ;
+		ldes:retentionPolicy [
+      a ldes:DurationAgoPolicy ;
+      tree:value "P7D"^^xsd:duration ;
+    ]
+	] .

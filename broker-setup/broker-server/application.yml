@@ -1,0 +1,18 @@
+server:
+  port: 80
+  servlet:
+    context-path: /ldes
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://broker-database/broker-ldes
+      auto-index-creation: true
+
+ldes-server:
+  host-name: ${LDES_SERVER_HOST_NAME}
+
+springdoc:
+  swagger-ui:
+    path: /admin/doc/v1/swagger
+    urlsPrimaryName: base

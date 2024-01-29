@@ -1,0 +1,23 @@
+server:
+  port: 9006
+
+orchestrator:
+  pipelines:
+
+    # This is a pipeline for demonstrating how to setup a pipeline to follow an existing LDES as a Data Broker
+    - name: client-pipeline
+      description: "Replicates & synchronizes an existing LDES view, adds a location to each member and sends to the broker LDES Server"
+      input:
+        name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+        config:
+          url: ${LDES_SERVER_URL}
+          sourceFormat: application/n-quads
+      transformers:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+          config:
+            query: ./config/occupancy-add-location.rq
+            infer: true
+      outputs:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+          config:
+            endpoint: http://broker-server/ldes/occupancy

@@ -1,0 +1,10 @@
+@prefix dcterms:     <http://purl.org/dc/terms/> .
+@prefix sh:          <http://www.w3.org/ns/shacl#> .
+@prefix ldes:        <https://w3id.org/ldes#> .
+@prefix tree:        <https://w3id.org/tree#>.
+@prefix mv:          <http://schema.mobivoc.org/#>
+
+</occupancy> a ldes:EventStream ;
+	tree:shape [ a sh:NodeShape ] ;
+	ldes:timestampPath dcterms:modified ;
+	ldes:versionOfPath dcterms:isVersionOf .

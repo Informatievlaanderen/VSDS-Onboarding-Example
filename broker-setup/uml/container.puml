@@ -1,0 +1,28 @@
+@startuml Publisher / Broker Setup - Container Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Publisher / Broker Setup - Container Diagram
+
+System_Ext(source, "Data Owner System", "Provides the non-linked data")
+
+System_Boundary(data_publisher, "Data Publisher Systems") {
+    Container(publisher_workbench, "Publisher Workbench", "docker container", "Transforms non-linked data to linked data LDES members")
+    Container(publisher_server, "Publisher LDES Server", "docker container", "Ingests LDES members and serves LDES views")
+    Container(publisher_database, "Publisher Database", "Contains LDES members and other information")
+}
+
+System_Boundary(data_broker, "Data Broker Systems") {
+    Container(broker_workbench, "Broker Workbench", "docker container", "Replicates and synchronizes a LDES view (fully or partially)")
+    Container(broker_server, "Broker LDES Server", "docker container", "Ingests LDES members and serves (additional) LDES views")
+    Container(broker_database, "Broker Database", "Contains LDES members and other information")
+}
+
+Rel_L(publisher_workbench, source, "polls for changes periodically")
+Rel_R(publisher_workbench, publisher_server, "sends LDES members")
+Rel_R(publisher_server, publisher_database, "stores LDES members")
+
+Rel_U(broker_workbench, publisher_server, "follows the LDES")
+Rel_R(broker_workbench, broker_server, "sends LDES members")
+Rel_R(broker_server, broker_database, "stores LDES members")
+
+@enduml

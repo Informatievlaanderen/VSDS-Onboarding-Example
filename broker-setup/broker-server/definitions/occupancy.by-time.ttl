@@ -1,0 +1,20 @@
+@prefix tree:     <https://w3id.org/tree#>.
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix ldes:     <https://w3id.org/ldes#> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+
+</occupancy/by-time> a tree:Node ; 
+  tree:viewDescription [ 
+		a tree:ViewDescription ;
+    tree:fragmentationStrategy ([
+      a tree:HierarchicalTimeBasedFragmentation ;
+      tree:maxGranularity "hour" ;
+      tree:fragmentationPath dcterms:modified ;
+  	]) ;
+		tree:pageSize "50"^^xsd:integer ;
+		ldes:retentionPolicy [
+      a ldes:DurationAgoPolicy ;
+      tree:value "P3M"^^xsd:duration ;
+    ] ;
+	] .
