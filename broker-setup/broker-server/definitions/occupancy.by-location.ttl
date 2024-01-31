@@ -14,6 +14,6 @@
 		tree:pageSize "100"^^xsd:integer ;
 		ldes:retentionPolicy [
       a ldes:DurationAgoPolicy ;
-      tree:value "P7D"^^xsd:duration ;
+      tree:value "PT30M"^^xsd:duration ;
     ]
 	] .
