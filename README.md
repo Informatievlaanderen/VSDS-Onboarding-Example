@@ -22,6 +22,8 @@ To try the examples yourself, you will also need to install [Docker Desktop](htt
 ## Where to start?
 We suggest you look at the examples in the following order, but of course, feel free to skip parts if you are already familiar with some topics.
 
+> **Note**: before running any of the commands in the tutorials please ensure you are located at that location in your bash shell.
+
 * [Setting up a minimal LDES Server](./minimal-server/README.md)
 * [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md)
 * [Publishing a simple data set with a basic setup](./basic-setup/README.md)
