@@ -70,7 +70,7 @@ The [docker compose](./docker-compose.yml) file isn't all that scary either. We 
 ```yaml
 ldio-workbench:
   container_name: basic-client_ldio-workbench
-  image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}

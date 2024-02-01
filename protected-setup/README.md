@@ -27,7 +27,7 @@ ldes-mongodb:
 
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.7.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   ports:
@@ -42,7 +42,7 @@ ldes-server:
 
 server-workbench:
   container_name: protected-setup_server-workbench
-  image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./server-workbench/config:/ldio/config:ro
     - ./server-workbench/application.yml:/ldio/application.yml:ro
@@ -65,7 +65,7 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 ```yaml
 client-workbench:
   container_name: protected-setup_client-workbench
-  image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}
@@ -307,7 +307,7 @@ Now that everything is working great we can simply remove (or comment out) the p
 ```yaml
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.7.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:

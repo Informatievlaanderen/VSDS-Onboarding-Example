@@ -508,7 +508,7 @@ Above we have assumed that the input is CSV. We have seen [previously](#pirates-
 ```yaml
   ldio-workbench:
     container_name: advanced-conversion_ldio-workbench
-    image: ldes/ldi-orchestrator:1.13.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./workbench/config:/ldio/config:ro
       - ./workbench/alternative.yml:/ldio/application.yml:ro

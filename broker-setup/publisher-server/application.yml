@@ -1,0 +1,17 @@
+server:
+  port: 80
+  servlet:
+    context-path: /ldes
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://publisher-database/publisher-ldes
+      auto-index-creation: true
+
+ldes-server:
+  host-name: ${LDES_SERVER_HOST_NAME}
+  retention-cron: "0 0 2 * * *" # at 02:00:00 daily
+  compaction-cron: "0 0 4 * * 7" # at 04:00:00 weekly on Sundays
+  compaction-duration: P5D
+  deletion-cron: "0 0 3 1 * *" # at 03:00:00 monthly on the 1st

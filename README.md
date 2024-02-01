@@ -11,7 +11,7 @@ To follow along and play with the examples you will need some knowledge of [Dock
 To download and use this repository you will need to install [Git](https://git-scm.com/downloads).
 
 ### Bash
-In order to run the commands in the tutorials you will to run them in a bash shell. On Windows, you need to use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about). This is also needed for Docker (see later). On MacOS, you can use the standard Z shell (zsh). Finally, on Linux, the bash shell is available by default.
+In order to run the commands in the tutorials you will to run them in a bash shell. On Windows, you need to use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about). This is also needed for Docker (see later). On MacOS, you can use the standard Z shell (zsh) but you may bump into some minor syntactic issues so it is better to use a bash shell. Finally, on Linux, the bash shell is available by default.
 
 ### Visual Studio Code
 You can use any editor or development environment that you like to look at the source files. However, Visual Studio Code and its open source alternative VSCodium offer a few nice features, such as previewing this and other markdown files as well as to manage [Docker](https://code.visualstudio.com/docs/containers/overview) and [Git](https://code.visualstudio.com/docs/sourcecontrol/overview) from within the environent.
@@ -28,8 +28,4 @@ We suggest you look at the examples in the following order, but of course, feel 
 * [Publishing as a standard open linked data model](./advanced-conversion/README.md)
 * [Setting up a minimal LDES Client](./minimal-client/README.md)
 * [Publishing and Accessing a Protected LDES](./protected-setup/README.md)
-
-We will cover many more topics in the (near) future, so stay tuned to get answers to the following questions:
-* as a Data Publisher, how do I keep my storage and bandwidth costs under control?
-* as a Data Broker, how do I offer different views on an LDES?
-* ...
+* [Republishing an Existing LDES](./broker-setup/README.md)
