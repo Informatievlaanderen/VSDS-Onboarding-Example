@@ -110,7 +110,7 @@ input:
       core-context: file:///ldio/context.jsonld
 ```
 
-> **Note** that we have to use the URI notation for the internal container path (`/ldio/context.jsonld`). Alternatively, we could use some pre-existing context somewhere online ar refer to it by URL.
+> **Note** that we have to use the URI notation for the internal container path (`/ldio/context.jsonld`). Alternatively, we could use some pre-existing context somewhere online or refer to it by URL.
 
 For the transformations steps we keep the same configuration for the version object creation and end up with the resulting [configuration file](./workbench/application.yml)
 
