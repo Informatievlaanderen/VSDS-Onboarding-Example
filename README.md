@@ -7,9 +7,6 @@ We start from a continuous feed of data containing the real time occupancy of pa
 ## Prerequisites
 To follow along and play with the examples you will need some knowledge of [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/) and [git](https://git-scm.com/). You will also need an editor such as [VSCodium](https://vscodium.com/) (or [VS Code](https://code.visualstudio.com/) if you really insist). And obviously, you need an open mind and feel like diving into the wonderful world of linked data and RDF.
 
-### Git
-To download and use this repository you will need to install [Git](https://git-scm.com/downloads).
-
 ### Bash
 In order to run the commands in the tutorials you will to run them in a bash shell. On Windows, you need to use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about). This is also needed for Docker (see later). On MacOS, you can use the standard Z shell (zsh) but you may bump into some minor syntactic issues so it is better to use a bash shell. Finally, on Linux, the bash shell is available by default.
 
@@ -18,6 +15,14 @@ You can use any editor or development environment that you like to look at the s
 
 ### Docker
 To try the examples yourself, you will also need to install [Docker Desktop](https://www.docker.com/products/docker-desktop/) on your [Windows](https://docs.docker.com/desktop/install/windows-install/) or [MacOS](https://docs.docker.com/desktop/install/mac-install/). If you have a Linux system, you can either use the [desktop](https://docs.docker.com/desktop/install/linux-install/) or the [server](https://docs.docker.com/engine/install/) version.
+
+### Git
+To download and use this repository you will need to install [Git](https://git-scm.com/downloads). After that you can download this repository locally by using the following (in a bash shell):
+```bash
+cd ~
+git clone https://github.com/Informatievlaanderen/VSDS-Onboarding-Example.git
+```
+> **Note** that the `git clone` command will create a directory `./VSDS-Onboarding-Example`. You need to open that folder in Visual Studio Code to get started.
 
 ## Where to start?
 We suggest you look at the examples in the following order, but of course, feel free to skip parts if you are already familiar with some topics.
