@@ -45,7 +45,7 @@ services:
       - LDES_SERVER_HOST_NAME=http://publisher-server/ldes
 
 
-  ### -- Publisher --
+  ### -- Broker --
 
   broker-database:
     container_name: protected-setup_broker-database
