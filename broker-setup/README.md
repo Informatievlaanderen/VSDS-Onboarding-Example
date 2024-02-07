@@ -158,7 +158,7 @@ For the Data Broker workbench we start from the pipeline as defined in [Setting 
     infer: true
 ```
 
-The transformation step takes the latitude and the longitude properties, creates a new blank node and uses a [built-in filter function](https://jena.apache.org/documentation/geosparql/#filter-functions) to format these properties as a [Well Known Text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) (WKT) literal and adds a `locn:gemotry` property which is a `sf:Point` having a `geosparql:asWKT` with our WKT value:
+The transformation step takes the latitude and the longitude properties, creates a new blank node and uses a [built-in filter function](https://jena.apache.org/documentation/geosparql/#filter-functions) to format these properties as a [Well Known Text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) (WKT) literal and adds a `locn:geometry` property which is a `sf:Point` having a `geosparql:asWKT` with our WKT value:
 ```text
 CONSTRUCT {
   ?id locn:geometry ?geometry .
