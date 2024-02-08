@@ -1,4 +1,4 @@
-# Publishing as a Standard Open Linked Data Model
+# Publishing as a Standard Linked Open Data Model
 This quick start guide will show you how to create a more advanced processing pipeline in the [LDIO Workbench](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) for converting our example model to a [standard open vocabulary](https://github.com/vocol/mobivoc) and to publish that as a [Linked Data Event Stream (LDES)](https://semiceu.github.io/LinkedDataEventStreams/).
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
