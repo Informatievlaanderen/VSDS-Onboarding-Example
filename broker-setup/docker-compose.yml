@@ -9,7 +9,7 @@ services:
   ### -- Publisher --
 
   publisher-database:
-    container_name: protected-setup_publisher-database
+    container_name: broker-setup_publisher-database
     image: mongo:latest
     ports:
       - 27017:27017
@@ -17,7 +17,7 @@ services:
       - common-network
 
   publisher-workbench:
-    container_name: protected-setup_publisher-workbench
+    container_name: broker-setup_publisher-workbench
     image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./publisher-workbench/config:/ldio/config:ro
@@ -30,7 +30,7 @@ services:
       - delay-started
 
   publisher-server:
-    container_name: protected-setup_publisher-server
+    container_name: broker-setup_publisher-server
     image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
@@ -48,7 +48,7 @@ services:
   ### -- Broker --
 
   broker-database:
-    container_name: protected-setup_broker-database
+    container_name: broker-setup_broker-database
     image: mongo:latest
     ports:
       - 27018:27017
@@ -56,7 +56,7 @@ services:
       - common-network
 
   broker-workbench:
-    container_name: protected-setup_broker-workbench
+    container_name: broker-setup_broker-workbench
     image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./broker-workbench/config:/ldio/config:ro
@@ -71,7 +71,7 @@ services:
       - LDES_SERVER_URL=http://publisher-server/ldes/occupancy/by-page
 
   broker-server:
-    container_name: protected-setup_broker-server
+    container_name: broker-setup_broker-server
     image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
