@@ -1,0 +1,47 @@
+version: '2.0'
+
+networks:
+  public-ldes-network:
+    name: public-ldes_network
+
+services:
+
+  ### -- Data Client --
+
+  workbench:
+    container_name: public-ldes_workbench
+    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    volumes:
+      - ./workbench/application.yml:/ldio/application.yml:ro
+    networks:
+      - public-ldes-network 
+    profiles:
+      - delay-started
+    environment:
+      - LDES_SERVER_URL=https://brugge-ldes.geomobility.eu/observations/by-page
+
+  ### -- Backend System --
+
+  sink:
+    container_name: public-ldes_sink
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9006:80
+    networks:
+      - public-ldes-network
+    depends_on:
+      - database
+    environment:
+      - MEMBER_TYPE=https://implementatie.data.vlaanderen.be/ns/vsds-verkeersmetingen#Verkeerstelling
+      - CONNECTION_URI=mongodb://database
+      - DATABASE_NAME=public-ldes
+      - COLLECTION_NAME=traffic-counts
+
+  database:
+    container_name: public-ldes_database
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    networks:
+      - public-ldes-network
+  

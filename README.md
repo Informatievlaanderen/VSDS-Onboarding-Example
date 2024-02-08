@@ -36,3 +36,4 @@ We suggest you look at the examples in the following order, but of course, feel 
 * [Setting up a minimal LDES Client](./minimal-client/README.md)
 * [Publishing and accessing a protected LDES](./protected-setup/README.md)
 * [Republishing an existing LDES](./broker-setup/README.md)
+* [Consuming a public LDES](./public-ldes/README.md)
