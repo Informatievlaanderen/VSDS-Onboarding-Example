@@ -10,7 +10,7 @@ services:
 
   workbench:
     container_name: public-ldes_workbench
-    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     networks:

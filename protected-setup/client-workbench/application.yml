@@ -8,16 +8,17 @@ orchestrator:
     - name: client-pipeline
       description: "Requests all existing members from a public LDES server and keeps following it for changes, sending each member as-is to a webhook"
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+        name: Ldio:LdesClient
         config:
-          url: ${LDES_SERVER_URL}
+          urls: 
+            - ${LDES_SERVER_URL}
           sourceFormat: application/n-quads
           auth:
             type: API_KEY
             api-key-header: x-api-key
             api-key: client-two-secret
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: ${SINK_URL}
             rate-limit:

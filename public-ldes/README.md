@@ -16,7 +16,7 @@ In fact, the pipeline configuration is the only thing we need in addition to a d
 ```yaml
 workbench:
   container_name: public-ldes_workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./workbench/application.yml:/ldio/application.yml:ro
   networks:
@@ -35,12 +35,13 @@ What about the pipeline? It is trivial as well:
 - name: client-pipeline
   description: "Replicates & synchronizes an existing LDES view and sends each member to a sink"
   input:
-    name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+    name: Ldio:LdesClient
     config:
-      url: ${LDES_SERVER_URL}
+      urls: 
+        - ${LDES_SERVER_URL}
       sourceFormat: application/n-triples
   outputs:
-    - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+    - name: Ldio:HttpOut
       config:
         endpoint: http://sink/member
 ```
@@ -75,7 +76,7 @@ If you open the above link (http://localhost:9006/member) in a browser you can c
 > **Note** that the result is in [Turtle](https://www.w3.org/TR/turtle/) format as we did not specify a `rdf-writer` in the `LdioHttpOut` configuration with a different RDF serialization format. E. g. if we wanted N-Triples we can add change the configuration to:
 ```yaml
 outputs:
-- name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+- name: Ldio:HttpOut
   config:
     endpoint: http://sink/member
     rdf-writer:

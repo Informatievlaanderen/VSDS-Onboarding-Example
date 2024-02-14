@@ -29,7 +29,7 @@ ldes-mongodb:
 
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   ports:
@@ -44,7 +44,7 @@ ldes-server:
 
 server-workbench:
   container_name: protected-setup_server-workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./server-workbench/config:/ldio/config:ro
     - ./server-workbench/application.yml:/ldio/application.yml:ro
@@ -67,7 +67,7 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 ```yaml
 client-workbench:
   container_name: protected-setup_client-workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}
@@ -309,7 +309,7 @@ Now that everything is working great we can simply remove (or comment out) the p
 ```yaml
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:
@@ -334,9 +334,10 @@ and we need to pass our `user.env` file to all our docker compose commands.
 Of course, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes. In the client workbench we need to change the LDES CLient component configuration to include this API key:
 ```yaml
 input:
-  name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+  name: Ldio:LdesClient
   config:
-    url: ${LDES_SERVER_URL}
+    urls: 
+      - ${LDES_SERVER_URL}
     sourceFormat: application/n-quads
     auth:
       type: API_KEY

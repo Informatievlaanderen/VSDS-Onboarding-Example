@@ -85,7 +85,7 @@ For the Data Publisher, apart from some renaming here and there, both the workbe
 ```yaml
 publisher-workbench:
   container_name: protected-setup_publisher-workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./publisher-workbench/config:/ldio/config:ro
     - ./publisher-workbench/application.yml:/ldio/application.yml:ro
@@ -98,7 +98,7 @@ publisher-workbench:
 
 publisher-server:
   container_name: protected-setup_publisher-server
-  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./publisher-server/application.yml:/application.yml:ro
   ports:
@@ -119,7 +119,7 @@ The Data Broker workbench pipeline is based on a LDES Client which replicates an
 ```yaml
 broker-workbench:
   container_name: protected-setup_broker-workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./broker-workbench/config:/ldio/config:ro
     - ./broker-workbench/application.yml:/ldio/application.yml:ro
@@ -134,7 +134,7 @@ broker-workbench:
 
 broker-server:
   container_name: protected-setup_broker-server
-  image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./broker-server/application.yml:/application.yml:ro
   ports:
@@ -152,7 +152,7 @@ broker-server:
 
 For the Data Broker workbench we start from the pipeline as defined in [Setting up a minimal LDES Client](./minimal-client/README.md) but we add one transformation step which will allow us to add a view later that is [geo-spatially fragmented](#around-the-world-around-the-world):
 ```yaml
-- name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+- name: Ldio:SparqlConstructTransformer
   config:
     query: ./config/occupancy-add-location.rq
     infer: true

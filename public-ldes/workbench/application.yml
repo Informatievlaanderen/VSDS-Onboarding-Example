@@ -8,11 +8,12 @@ orchestrator:
     - name: client-pipeline
       description: "Replicates & synchronizes an existing LDES view and sends each member to a sink"
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+        name: Ldio:LdesClient
         config:
-          url: ${LDES_SERVER_URL}
+          urls: 
+            - ${LDES_SERVER_URL}
           sourceFormat: application/n-triples
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: http://sink/member

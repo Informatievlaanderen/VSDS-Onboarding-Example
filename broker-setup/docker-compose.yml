@@ -18,7 +18,7 @@ services:
 
   publisher-workbench:
     container_name: broker-setup_publisher-workbench
-    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./publisher-workbench/config:/ldio/config:ro
       - ./publisher-workbench/application.yml:/ldio/application.yml:ro
@@ -31,7 +31,7 @@ services:
 
   publisher-server:
     container_name: broker-setup_publisher-server
-    image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
     ports:
@@ -57,7 +57,7 @@ services:
 
   broker-workbench:
     container_name: broker-setup_broker-workbench
-    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./broker-workbench/config:/ldio/config:ro
       - ./broker-workbench/application.yml:/ldio/application.yml:ro
@@ -72,7 +72,7 @@ services:
 
   broker-server:
     container_name: broker-setup_broker-server
-    image: ldes/ldes-server:2.8.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:

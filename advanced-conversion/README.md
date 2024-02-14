@@ -73,7 +73,7 @@ As mention above, to make it more interesting we will be retrieving the number o
 For example, to poll our source URL every two minutes we need to configure our pipeline input as:
 ```yaml
 input:
-  name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
+  name: Ldio:HttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
     cron: 0 * * * * *
@@ -198,12 +198,12 @@ We also need to change our workbench pipeline to use the above RML mapping file 
 
 ```yaml
 input:
-  name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
+  name: Ldio:HttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
     cron: 0 */2 * * * *
   adapter:
-    name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
+    name: Ldio:RmlAdapter
     config:
       mapping: ./config/source-to-intermediate.ttl
 ```
@@ -352,7 +352,7 @@ Now that we have learned how to introduce structure in our target model we can c
 
 ```yaml
 transformers:
-  - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+  - name: Ldio:SparqlConstructTransformer
     config:
       query: ./config/intermediate-to-target.rq
 ```
@@ -360,7 +360,7 @@ transformers:
 In addition, as our target model has changed, we need to fix the transformation step which creates the version object to:
 
 ```yaml
-  - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+  - name: Ldio:VersionObjectCreator
     config:
       member-type: http://schema.mobivoc.org/#ParkingLot
       delimiter: "/"
@@ -508,7 +508,7 @@ Above we have assumed that the input is CSV. We have seen [previously](#pirates-
 ```yaml
   ldio-workbench:
     container_name: advanced-conversion_ldio-workbench
-    image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
     volumes:
       - ./workbench/config:/ldio/config:ro
       - ./workbench/alternative.yml:/ldio/application.yml:ro
