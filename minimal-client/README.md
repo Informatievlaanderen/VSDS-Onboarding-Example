@@ -33,15 +33,16 @@ Now what do we need for our minimal LDES Client example? Really not that much! W
 
 So, the input part of our pipeline will look something like this:
 ```yaml
-name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+name: Ldio:LdesClient
 config:
-  url: http://localhost:9003/ldes/occupancy/by-page
+  urls: 
+    - http://localhost:9003/ldes/occupancy/by-page
 ```
 That's all folks. Short and simple.
 
 Now for the output:
 ```yaml
-name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+name: Ldio:HttpOut
 config:
   endpoint: https://webhook.site/287d6ad6-b339-42fc-8b5e-297714ac688c
 ```
@@ -52,12 +53,13 @@ OK, OK, if you look at the [workbench configuration](./application.yml) you will
 - name: client-pipeline
   description: "Requests all existing members from a public LDES server and keeps following it for changes, sending each member as-is to a webhook"
   input:
-    name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+    name: Ldio:LdesClient
     config:
-      url: ${LDES_SERVER_URL}
+      urls: 
+        - ${LDES_SERVER_URL}
       sourceFormat: application/n-quads
   outputs:
-    - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+    - name: Ldio:HttpOut
       config:
         endpoint: ${SINK_URL}
         rate-limit:
@@ -70,7 +72,7 @@ The [docker compose](./docker-compose.yml) file isn't all that scary either. We 
 ```yaml
 ldio-workbench:
   container_name: basic-client_ldio-workbench
-  image: ldes/ldi-orchestrator:1.14.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}

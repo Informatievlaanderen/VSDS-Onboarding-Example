@@ -36,15 +36,15 @@ The pipeline definition starts with a name and a description. The latter is pure
 The input component simply states that it is a HTTP listener which uses a RDF adaptor and as such is expecting Linked Data:
 ```yaml
 input:
-  name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+  name: Ldio:HttpIn
   adapter:
-    name: be.vlaanderen.informatievlaanderen.ldes.ldi.RdfAdapter
+    name: Ldio:RdfAdapter
 ```
 
 We need a transformation step to turn the linked data state object which we receive into a version object. We need to specify for which object type we need to change it to a version object. We use this type to retrieve that object's identifier and create the version object ID based on this identifier concatenated with the delimiter and the value of the `date-observed-property`. We also use the identifier to add a property as specified by `versionOf-property` to the version object. Finally, we also use the `date-observed-property` value to add a property as defined by the `generatedAt-property` to the version object. This sounds way more complicated than it actually is as we will show later. 
 ```yaml
 transformers:
-  - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+  - name: Ldio:VersionObjectCreator
     config:
       member-type: https://example.org/ns/mobility#offStreetParkingGround
       delimiter: "/"
@@ -58,7 +58,7 @@ transformers:
 Finally, the version object is output to the specified sink. For demo purposes we use a component that simply logs the member to the console, which for a Docker container results in its logs.
 ```yaml
 outputs:
-  - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioConsoleOut 
+  - name: Ldio:ConsoleOut 
 ```
 
 ## Launch the Magic
@@ -66,6 +66,7 @@ After this long introduction let's get our hands dirty and see the magic in acti
 
 To start the workbench and wait until it is available:
 ```bash
+clear
 docker compose up -d
 while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 ```

@@ -79,11 +79,11 @@ For the port (`server.port`) and sub-path (`server.servlet.context-path`) on whi
 ## Create the LDIO Workbench Configuration File
 For the workbench configuration file we can start from the [configuration](../minimal-workbench/config/application.yml) we used for the [minimal workbench tutorial](../minimal-workbench/README.md) but serve the pipelines on a different port (`80`).
 
-As we are now creating an integrated setup we will not send the generated members to the container log using the `LdioConsoleout` component, but instead we use the `LdioHttpOut` component. This component allows us to send the member to the LDES server ingest endpoint over HTTP. How do we determine this HTTP ingest endpoint? Because the LDIO Workbench and the LDES Server share the same private network, the workbench can address the server using its service name `ldes-server` as server path `http://ldes-server`. As we have set the sub-path to serve all event streams from `/ldes` we append that to the server path. Finally, as we [define](./definitions/occupancy.ttl) our LDES in the same way as we did in the [minimal server tutorial](../minimal-server/README.md), we need to append the name of the LDES (`/occupancy`). Putting all of this together, in this tutorial the HTTP ingest endpoint for our LDES becomes `http://ldes-server/ldes/occupancy`. The configuration for our output thus becomes:
+As we are now creating an integrated setup we will not send the generated members to the container log using the `ConsoleOut` component, but instead we use the `LdioHttpOut` component. This component allows us to send the member to the LDES server ingest endpoint over HTTP. How do we determine this HTTP ingest endpoint? Because the LDIO Workbench and the LDES Server share the same private network, the workbench can address the server using its service name `ldes-server` as server path `http://ldes-server`. As we have set the sub-path to serve all event streams from `/ldes` we append that to the server path. Finally, as we [define](./definitions/occupancy.ttl) our LDES in the same way as we did in the [minimal server tutorial](../minimal-server/README.md), we need to append the name of the LDES (`/occupancy`). Putting all of this together, in this tutorial the HTTP ingest endpoint for our LDES becomes `http://ldes-server/ldes/occupancy`. The configuration for our output thus becomes:
 
 ```yaml
 outputs:
-  - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+  - name: Ldio:HttpOut
     config:
       endpoint: http://ldes-server/ldes/occupancy
       rdf-writer:
@@ -103,9 +103,9 @@ Now we can change the workbench input configuration to:
 
 ```yaml
 input:
-  name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+  name: Ldio:HttpIn
   adapter:
-    name: be.vlaanderen.informatievlaanderen.ldes.ldi.JsonToLdAdapter
+    name: Ldio:JsonToLdAdapter
     config:
       core-context: file:///ldio/context.jsonld
 ```

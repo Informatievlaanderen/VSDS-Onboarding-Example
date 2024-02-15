@@ -8,16 +8,17 @@ orchestrator:
     - name: client-pipeline
       description: "Replicates & synchronizes an existing LDES view, adds a location to each member and sends to the broker LDES Server"
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+        name: Ldio:LdesClient
         config:
-          url: ${LDES_SERVER_URL}
+          urls: 
+            - ${LDES_SERVER_URL}
           sourceFormat: application/n-quads
       transformers:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+        - name: Ldio:SparqlConstructTransformer
           config:
             query: ./config/occupancy-add-location.rq
             infer: true
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: http://broker-server/ldes/occupancy

@@ -7,11 +7,11 @@ orchestrator:
     - name: p+r-pipeline
       description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+        name: Ldio:HttpIn
         adapter:
-          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RdfAdapter
+          name: Ldio:RdfAdapter
       transformers:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+        - name: Ldio:VersionObjectCreator
           config:
             member-type: https://example.org/ns/mobility#offStreetParkingGround
             delimiter: "/"
@@ -19,4 +19,4 @@ orchestrator:
             generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
             versionOf-property: http://purl.org/dc/terms/isVersionOf
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioConsoleOut 
+        - name: Ldio:ConsoleOut 

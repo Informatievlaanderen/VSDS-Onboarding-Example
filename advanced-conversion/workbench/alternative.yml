@@ -8,13 +8,13 @@ orchestrator:
     - name: json-pipeline
       description: "Accepts park-and-ride data in JSON formats, converts to linked data & sends to continuation pipeline."
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+        name: Ldio:HttpIn
         adapter:
-          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
+          name: Ldio:RmlAdapter
           config:
             mapping: ./config/json-to-intermediate.ttl
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: http://localhost/intermediate-pipeline
             rdf-writer:
@@ -25,13 +25,13 @@ orchestrator:
     - name: geojson-pipeline
       description: "Accepts park-and-ride data in GeoJSON formats, converts to linked data & sends to continuation pipeline."
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+        name: Ldio:HttpIn
         adapter:
-          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
+          name: Ldio:RmlAdapter
           config:
             mapping: ./config/geojson-to-intermediate.ttl
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: http://localhost/intermediate-pipeline
             rdf-writer:
@@ -42,14 +42,14 @@ orchestrator:
     - name: intermediate-pipeline
       description: "Accepts linked data in any RDF format, creates versions & sends to LDES server."
       input:
-        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpIn
+        name: Ldio:HttpIn
         adapter:
-          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RdfAdapter
+          name: Ldio:RdfAdapter
       transformers:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.SparqlConstructTransformer
+        - name: Ldio:SparqlConstructTransformer
           config:
             query: ./config/intermediate-to-target.rq
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.VersionObjectCreator
+        - name: Ldio:VersionObjectCreator
           config:
             member-type: http://schema.mobivoc.org/#ParkingLot
             delimiter: "#"
@@ -57,7 +57,7 @@ orchestrator:
             generatedAt-property: http://purl.org/dc/terms/modified
             versionOf-property: http://purl.org/dc/terms/isVersionOf
       outputs:
-        - name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpOut
+        - name: Ldio:HttpOut
           config:
             endpoint: http://ldes-server/ldes/occupancy
             rdf-writer:
