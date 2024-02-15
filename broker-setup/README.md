@@ -98,7 +98,7 @@ publisher-workbench:
 
 publisher-server:
   container_name: protected-setup_publisher-server
-  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./publisher-server/application.yml:/application.yml:ro
   ports:
@@ -134,7 +134,7 @@ broker-workbench:
 
 broker-server:
   container_name: protected-setup_broker-server
-  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./broker-server/application.yml:/application.yml:ro
   ports:

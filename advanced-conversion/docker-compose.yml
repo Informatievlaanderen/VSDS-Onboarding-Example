@@ -16,7 +16,7 @@ services:
 
   ldes-server:
     container_name: advanced-conversion_ldes-server
-    image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
     volumes:
       - ./server/application.yml:/application.yml:ro
     ports:

@@ -29,7 +29,7 @@ ldes-mongodb:
 
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   ports:
@@ -309,7 +309,7 @@ Now that everything is working great we can simply remove (or comment out) the p
 ```yaml
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.9.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:
