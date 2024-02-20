@@ -71,7 +71,8 @@ client-workbench:
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}
-    - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-50}
+    - RATE_LIMIT_MAX=50
+    - RATE_LIMIT_PERIOD=PT1M
   volumes:
     - ./client-workbench/application.yml:/ldio/application.yml:ro
   network_mode: "host"

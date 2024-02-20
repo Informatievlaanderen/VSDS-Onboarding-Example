@@ -19,4 +19,5 @@ orchestrator:
             endpoint: ${SINK_URL}
             rate-limit:
               enabled: true
-              max-requests-per-minute: ${MAX_REQUESTS_PER_MINUTE}
+              limit: ${RATE_LIMIT_MAX}
+              period: ${RATE_LIMIT_PERIOD}

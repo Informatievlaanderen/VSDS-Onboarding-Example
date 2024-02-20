@@ -64,7 +64,8 @@ OK, OK, if you look at the [workbench configuration](./application.yml) you will
         endpoint: ${SINK_URL}
         rate-limit:
           enabled: true
-          max-requests-per-minute: ${MAX_REQUESTS_PER_MINUTE}
+          limit: ${RATE_LIMIT_MAX}
+          period: ${RATE_LIMIT_PERIOD}
 ```
 But that is because we made it a bit more generic by using environment variables for the LDES Client `url` and the HTTP output `endpoint`. In addition, we added the `sourceFormat: application/n-quads` to request the LDES nodes as N-quads instead of the default format JSON-LD because N-quads can be parsed way faster. Finally we also added the `rate-limit` section because depending on which online sink service you use, you may be limited into how many HTTP requests you can send to it (usually a free sink service is limited to a minimal amout, e.g. 50 requests/minute). But in the end let's be honest: it is not that complicated.
 
@@ -76,7 +77,8 @@ ldio-workbench:
   environment:
     - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
     - SINK_URL=${SINK_URL}
-    - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-50}
+    - RATE_LIMIT_MAX=50
+    - RATE_LIMIT_PERIOD=PT1M
   volumes:
     - ./application.yml:/ldio/application.yml:ro
   network_mode: "host"
