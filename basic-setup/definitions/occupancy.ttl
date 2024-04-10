@@ -7,5 +7,6 @@
 
 </occupancy> a ldes:EventStream ;
 	tree:shape [ a sh:NodeShape ] ;
+	ldes:createVersions true ;
 	ldes:timestampPath prov:generatedAtTime ;
 	ldes:versionOfPath dcterms:isVersionOf .
