@@ -1,0 +1,8 @@
+name: park-n-ride-pipeline
+description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
+input:
+  name: Ldio:HttpIn
+  adapter:
+    name: Ldio:RdfAdapter
+outputs:
+  - name: Ldio:ConsoleOut 
