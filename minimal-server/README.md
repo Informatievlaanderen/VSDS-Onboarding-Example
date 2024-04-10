@@ -1,5 +1,5 @@
 # Setting Up a Minimal LDES Server
-> **UPDATED** this tutorial has been changed to ingest regular (state) objects instead of (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0).
+> **UPDATED** this tutorial has been changed to ingest regular (state) objects instead of (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/minimal-server).
 
 This quick start guide will show you how to setup a minimal LDES server to accept linked data members.
 
