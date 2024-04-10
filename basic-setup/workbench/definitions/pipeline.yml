@@ -1,0 +1,24 @@
+name: park-n-ride-pipeline
+description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
+input:
+  name: Ldio:HttpIn
+  adapter:
+    name: Ldio:JsonToLdAdapter
+    config:
+      context: |
+        {
+          "@context": {
+            "@vocab": "https://example.org/ns/mobility#",
+            "urllinkaddress": "@id",
+            "type": "@type",
+            "lastupdate": {
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          }
+        }
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://ldes-server/ldes/occupancy
+      rdf-writer:
+        content-type: application/n-quads
