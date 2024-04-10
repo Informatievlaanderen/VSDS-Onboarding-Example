@@ -13,3 +13,5 @@ services:
       - 9004:8080
     networks:
       - minimal-workbench 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldes-server-workbench:8080/actuator/health"]
