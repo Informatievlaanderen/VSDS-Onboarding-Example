@@ -1,12 +1,8 @@
 @prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
-@prefix dcterms:  <http://purl.org/dc/terms/> .
-@prefix prov:     <http://www.w3.org/ns/prov#> .
 @prefix :         <https://example.org/ns/mobility#> .
 
-<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00>
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal>
   a :offStreetParkingGround ;
-  prov:generatedAtTime "2023-11-30T21:45:15+01:00"^^xsd:dateTime ;
-  dcterms:isVersionOf <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal> ;
   :availablespaces 0 ;
   :freeparking 1 ;
   :gentse_feesten "True"^^xsd:string ;
