@@ -31,8 +31,8 @@ To run the commands below you need to use a [bash command shell](https://en.wiki
 
 To launch the LDES Server and the MongoDB containers:
 ```bash
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+clear
+docker compose up -d --wait
 ```
 
 > **Note** that we start the containers as deamons and then wait for the LDES server to be available by checking every second that the container log file contains the magic string `Started Application in`. You could also simply start it with `docker compose up` and wait until you actually see this magic string, but then you need to open a new command shell to execute the commands in the next sections.
