@@ -1,18 +1,20 @@
 # Setting Up a Minimal LDIO Workbench
-This quick start guide will show you how to setup a minimal workbench to create version objects from state objects.
+> **UPDATED** this tutorial has been changed to to define the pipeline dynamically and to process regular (state) objects instead of creating (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/minimal-workbench).
+
+This quick start guide will show you how to setup a minimal workbench to create linked data state objects.
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
 
 ## Show Me Your Workbench
-The LDES Server allows to ingest version objects but typically the source data represents the state of an object and not a version in time of this state. That is why a data transformation is needed to create such a version object.
+The LDES Server allows to ingest linked data but typically the source data represents the state of an object in a non-linked data way. That is why a data transformation is needed.
 
 Such a data transformation can be standalone or as part of a data transformation pipeline which can be build in various ways with many different data processing systems.
 
 One such a workbench that allows to create data pipelines is [Apache NiFi](https://nifi.apache.org/). This is a mature and solid open-source solution that comes with many features, allows for horizontal scaling and comes with many standard processors for creating and monitoring complex data pipelines. However, it also comes with a steep learning curve and some other drawbacks. 
 
-The Linked Data Interactions Orchestrator ([LDIO](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) is a simple and more light-weight solution that eases the process of creating more straightforward, linear data transformations while requiring minimal resources and attempting to keep the learning curve as low as possible. It is by no means a silver bullet but experience has learned us that most data publishing use cases can easy be covered with a simple linear pipeline and as such LDIO usually suffies.
+The Linked Data Interactions Orchestrator ([LDIO](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/)) is a simple and more light-weight solution that eases the process of creating more straightforward, linear data transformations while requiring minimal resources and attempting to keep the learning curve as low as possible. It is by no means a silver bullet but experience has learned us that most data publishing use cases can easy be covered with a simple linear pipeline and as such LDIO usually suffies.
 
-LDIO allows to create one or more synchronous linear pipelines that convert linked and non-linked data to version objects that can be ingested by an LDES Server. It is centered around the concept of one input source with an adaptor to convert to linked data, one or more in-memory transformation steps and sending the result to one or more output sinks.
+LDIO allows to create one or more synchronous linear pipelines that convert non-linked data to linked data (state or version objects) that can be ingested by an LDES Server. It is centered around the concept of one input source with an adaptor to convert to linked data, one or more in-memory transformation steps and sending the result to one or more output sinks.
 
 Various input components are available for starting a pipeline such as: accepting HTTP messages both using a push model (HTTP listener) and a pull model (HTTP poller), reading from Kafka, etc.
 
@@ -27,11 +29,11 @@ All these components are provided as part of the LDIO workbench which is package
 ## Configure Your First Pipeline
 The example [docker compose file](./docker-compose.yml) only contains a LDIO service which runs in a private network and uses volume mapping to have its configuration file available in the container. As we will see in a minute, the pipeline starts with a HTTP listener and therefore we need a port mapping to allow the workbench to receive HTTP messages.
 
-The [workbench configuration file](./config/application.yml) starts with specifying the port on which the HTTP listener will accept requests. We have used the default port number 8080 and could have easily omitted it from te configuration. Other than that, we only need to specify the actual pipeline definition.
+The [workbench configuration file](./config/application.yml) only specifies the port on which the HTTP listener will accept requests. We have used the default port number 8080 and could have easily omitted it from the configuration. We do not need to specify the actual pipeline definition here as we will be sending it dynamically to the LDIO Workbench.
 
-> **Note** that the workbench can contain more than one pipeline if needed.
+> **Note** that the workbench can contain more than one pipeline if needed. We simply need to define our pipelines with a different name using lowercase or uppercase letters, digits, blanks and the special characters `_`, `-`  & `.`.
 
-The pipeline definition starts with a name and a description. The latter is purely for documentation purposes, but the former is used as the base path on which the HTTP listener receives requests. In our case this is (based on the docker compose port mapping): http://localhost:9004/p+r-pipeline. After that the definition continues with the input component and associated adapter, the transformation steps and the output(s). Let's look at these in more detail.
+The [pipeline definition](./definitions/pipeline.yml) starts with a name and a description. The latter is purely for documentation purposes, but the former is used as the base path on which the HTTP listener receives requests. In our case this is (based on the docker compose port mapping): http://localhost:9004/park-n-ride-pipeline. After that the definition continues with the input component and associated adapter, the (optional) transformation steps and the output(s). Let's look at these in more detail.
 
 The input component simply states that it is a HTTP listener which uses a RDF adaptor and as such is expecting Linked Data:
 ```yaml
@@ -41,21 +43,21 @@ input:
     name: Ldio:RdfAdapter
 ```
 
-We need a transformation step to turn the linked data state object which we receive into a version object. We need to specify for which object type we need to change it to a version object. We use this type to retrieve that object's identifier and create the version object ID based on this identifier concatenated with the delimiter and the value of the `date-observed-property`. We also use the identifier to add a property as specified by `versionOf-property` to the version object. Finally, we also use the `date-observed-property` value to add a property as defined by the `generatedAt-property` to the version object. This sounds way more complicated than it actually is as we will show later. 
-```yaml
-transformers:
-  - name: Ldio:VersionObjectCreator
-    config:
-      member-type: https://example.org/ns/mobility#offStreetParkingGround
-      delimiter: "/"
-      date-observed-property: <http://www.w3.org/ns/prov#generatedAtTime>
-      generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
-      versionOf-property: http://purl.org/dc/terms/isVersionOf
-```
+> **Note** that as of LDES Server 2.12.0 you do not need to create version objects for the linked data state objects anymore as you can configure the server to automatically create version objects on ingestion. See the [Setting Up a Minimal LDES Server](../minimal-server/README.md) tutorial on how to do this.
+>
+> Before LDES Server 2.12.0 we need a transformation step to turn the linked data state object which we receive into a version object. We need to specify for which object type we need to change it to a version object. We use this type to retrieve that object's identifier and create the version object ID based on this identifier concatenated with the delimiter and the value of the `date-observed-property`. We also use the identifier to add a property as specified by `versionOf-property` to the version object. Finally, we also use the `date-observed-property` value to add a property as defined by the `generatedAt-property` to the version object. This sounds way more complicated than it actually is as we will show later. 
+> ```yaml
+> transformers:
+>   - name: Ldio:VersionObjectCreator
+>     config:
+>       member-type: https://example.org/ns/mobility#offStreetParkingGround
+>       delimiter: "/"
+>       date-observed-property: <http://www.w3.org/ns/prov#generatedAtTime>
+>       generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
+>       versionOf-property: http://purl.org/dc/terms/isVersionOf
+> ```
 
-> **Note** that we used the `http://www.w3.org/ns/prov#generatedAtTime` property for both creating the version object ID as well as for the `generatedAt-property`. This will prevent creating another property with the same date/time value.  
-
-Finally, the version object is output to the specified sink. For demo purposes we use a component that simply logs the member to the console, which for a Docker container results in its logs.
+We output the linked data (state) objects to the specified sink(s). For demo purposes we use a component that simply logs the member to the console, which for a Docker container results in its logs.
 ```yaml
 outputs:
   - name: Ldio:ConsoleOut 
@@ -67,14 +69,27 @@ After this long introduction let's get our hands dirty and see the magic in acti
 To start the workbench and wait until it is available:
 ```bash
 clear
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+docker compose up -d --wait
 ```
 
 There is no visual component yet for the LDIO workbench, but you can check its status at http://localhost:9004/actuator/health.
 
+The workbench is now ready to receive our pipeline. We can use the LDIO Workbench admin API to tell it to use our pipeline:
+```bash
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/pipeline.yml
+```
+
+You can check that the pipeline is actually running:
+```bash
+curl http://localhost:9004/admin/api/v1/pipeline/status
+```
+which returns:
+```json
+{"park-n-ride-pipeline":"RUNNING"}
+```
+
 ## You've Got Mail
-Now that the workbench is up and running we can send a [message](./data/message.jsonld) through the pipeline and see its version object outputted to the workbench logs. We use the following simple JSON-LD message (clipped to the relevant parts):
+Now that the workbench and the pipeline is up and running we can send a [message](./data/message.jsonld) through the pipeline and see its version object outputted to the workbench logs. We use the following simple JSON-LD message (clipped to the relevant parts):
 ```json
 {
     "@context": {
@@ -82,7 +97,6 @@ Now that the workbench is up and running we can send a [message](./data/message.
         "urllinkaddress": "@id",
         "type": "@type",
         "lastupdate": {
-            "@id": "http://www.w3.org/ns/prov#generatedAtTime",
             "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
         }
     },
@@ -97,33 +111,42 @@ Now that the workbench is up and running we can send a [message](./data/message.
 
 To send the message into the pipeline:
 ```bash
-curl -X POST -H "Content-Type: application/ld+json" "http://localhost:9004/p+r-pipeline" -d "@./data/message.jsonld"
+curl -X POST -H "Content-Type: application/ld+json" "http://localhost:9004/park-n-ride-pipeline" -d "@./data/message.jsonld"
 ```
 
 Since it is a small and straight forward message the workbench log will almost immediately contain the version object. 
 
 To watch the version object appear in the workbench log
 ```bash
-docker logs -n 30 $(docker ps -q -f "name=ldio-workbench$")
+docker logs -n 25 $(docker ps -q -f "name=ldio-workbench$")
 ```
 
-You should see the following (clipped to the relevant parts):
+You should see the following:
 ```text
-@prefix mobility:         <https://example.org/ns/mobility#> .
-@prefix park-and-ride-pr: <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/> .
-@prefix prov:             <http://www.w3.org/ns/prov#> .
-@prefix rdf:              <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix terms:            <http://purl.org/dc/terms/> .
+2024-04-10T10:03:17.426Z  INFO 1 --- [nio-8080-exec-6] b.v.i.ldes.ldio.LdiConsoleOut            : @prefix :         <https://example.org/ns/mobility#> .
+@prefix mobility: <https://example.org/ns/mobility#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
-<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00>
-        rdf:type                      mobility:offStreetParkingGround ;
-        terms:isVersionOf             park-and-ride-pr:pr-gentbrugge-arsenaal ;
-        prov:generatedAtTime          "2023-11-30T21:45:15+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
-...
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal>
+        rdf:type                      mobility:offStreetParkingGround;
+        mobility:availablespaces      0;
+        mobility:freeparking          1;
+        mobility:gentse_feesten       "True";
+        mobility:isopennow            1;
+        mobility:lastupdate           "2023-11-30T21:45:15+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>;
+        mobility:latitude             "51.0325480691";
+        mobility:location             [ mobility:lat  5.10325480691E1;
+                                        mobility:lon  3.7583663653E0
+                                      ];
+        mobility:longitude            "3.7583663653";
+        mobility:name                 "P+R Gentbrugge Arsenaal";
+        mobility:numberofspaces       0;
+        mobility:occupancytrend       "unknown";
+        mobility:openingtimesdescription
+                "24/7";
+        mobility:operatorinformation  "Mobiliteitsbedrijf Gent";
+        mobility:temporaryclosed      0 .
 ```
-
-If you compare the generated member in the container log with the example that we process, you will notice that the state object ID (`park-and-ride-pr:pr-gentbrugge-arsenaal` or `http://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal` in full) is a property (`terms:isVersionOf` or `http://purl.org/dc/terms/isVersionOf` in full) of the version object and the version ID (`https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal/2023-11-30T21:45:15+01:00`) is a combination of that state object ID, the delimiter (`/`) and the `prov:generatedAtTime` property (`2023-11-30T21:45:15+01:00`).
-
 
 ## That's All Folks
 You now know how to configure a basic LDIO workbench which takes in RDF messages containing a single state object and turn it into a version object that can be ingested as a LDES member.

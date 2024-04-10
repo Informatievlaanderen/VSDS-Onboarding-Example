@@ -1,5 +1,3 @@
-version: '2.0'
-
 networks:
   minimal-server:
     name: minimal-server_ldes-network
@@ -17,6 +15,8 @@ services:
       - minimal-server
     depends_on:
       - ldes-mongodb
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldes-server:8080/actuator/health"]
 
   ldes-mongodb:
     container_name: minimal-server_ldes-mongodb

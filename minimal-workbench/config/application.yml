@@ -1,22 +1,2 @@
 server:
   port: 8080
-
-orchestrator:
-  pipelines:
-
-    - name: p+r-pipeline
-      description: "Traffic message in using HTTP, OSLO transformation, version creation & HTTP sending."
-      input:
-        name: Ldio:HttpIn
-        adapter:
-          name: Ldio:RdfAdapter
-      transformers:
-        - name: Ldio:VersionObjectCreator
-          config:
-            member-type: https://example.org/ns/mobility#offStreetParkingGround
-            delimiter: "/"
-            date-observed-property: <http://www.w3.org/ns/prov#generatedAtTime>
-            generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
-            versionOf-property: http://purl.org/dc/terms/isVersionOf
-      outputs:
-        - name: Ldio:ConsoleOut 
