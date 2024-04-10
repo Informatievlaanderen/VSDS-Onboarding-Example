@@ -29,11 +29,17 @@ We suggest you look at the examples in the following order, but of course, feel 
 
 > **Note**: before running any of the commands in the tutorials please ensure you are located at that location in your bash shell.
 
-* [Setting up a minimal LDES Server](./minimal-server/README.md)
-* [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md)
-* [Publishing a simple data set with a basic setup](./basic-setup/README.md)
-* [Publishing as a standard linked open data model](./advanced-conversion/README.md)
-* [Setting up a minimal LDES Client](./minimal-client/README.md)
-* [Publishing and accessing a protected LDES](./protected-setup/README.md)
-* [Republishing an existing LDES](./broker-setup/README.md)
-* [Consuming a public LDES](./public-ldes/README.md)
+### Tutorials for Data Publishers
+* [Setting up a minimal LDES Server](./minimal-server/README.md) (directly ingesting linked data)
+* [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md) (converting to linked data)
+* [Publishing a simple data set with a basic setup](./basic-setup/README.md) (converting to linked data before ingesting it)
+* [Publishing as a standard linked open data model](./advanced-conversion/README.md) (using a standard vocabulary for publication)
+* [Publishing a protected LDES](./protected-setup/README.md) (limitting access to a LDES)
+
+### Tutorials for Data Clients
+* [Setting up a minimal LDES Client](./minimal-client/README.md) (consuming a local LDES)
+* [Consuming a public LDES](./public-ldes/README.md) (accessing a public LDES)
+* [Consuming a protected LDES](./protected-setup/README.md#access-the-ldes-server-through-the-reverse-proxy) (accessing a non-public LDES)
+
+### Tutorials for Data Brokers
+* [Republishing an existing LDES](./broker-setup/README.md) (publishing a different LDES view or a derived LDES)

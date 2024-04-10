@@ -1,4 +1,4 @@
-# Publishing and Accessing a Protected LDES
+# Publishing a Protected LDES
 This tutorial will show you how to protect a LDES in order to prevent unauthorized access to a proprietary (or a public) data collection. It will also show how to expose the available LDES Server API as well as add and expose some metadata (using DCAT). In addition it will show you how to access such a protected LDES.
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
