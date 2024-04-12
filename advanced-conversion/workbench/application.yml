@@ -5,7 +5,7 @@ orchestrator:
   pipelines:
 
     # This is a pipeline for demonstrating CSV to linked data conversion using RML
-    - name: p+r-pipeline
+    - name: park-n-ride-pipeline
       description: "Polls for CSV park-and-ride data, converts to linked data, creates versions & sends to LDES server."
       input:
         name: Ldio:HttpInPoller

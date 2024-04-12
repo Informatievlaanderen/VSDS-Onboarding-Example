@@ -1,5 +1,5 @@
 # Setting Up a Minimal LDIO Workbench
-> **UPDATED** this tutorial has been changed to to define the pipeline dynamically and to process regular (state) objects instead of creating (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/minimal-workbench).
+> **UPDATED** this tutorial has been changed to define the pipeline dynamically and to process regular (state) objects instead of creating (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/minimal-workbench).
 
 This quick start guide will show you how to setup a minimal workbench to create linked data state objects.
 
