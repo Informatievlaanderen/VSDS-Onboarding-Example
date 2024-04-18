@@ -5,3 +5,12 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+
+logging:
+  level:
+    root: WARN
+    be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO
+
+management:
+  tracing:
+    enabled: false
