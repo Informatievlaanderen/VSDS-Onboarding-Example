@@ -1,8 +1,13 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://ldes-mongodb/minimal-server
       auto-index-creation: true
 
-ldes-server:
-  host-name: http://localhost:9003
+logging:
+  level:
+    root: WARN
+    be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO
+
+management:
+  tracing:
+    enabled: false
