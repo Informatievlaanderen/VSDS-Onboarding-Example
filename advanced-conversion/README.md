@@ -1,10 +1,12 @@
 # Publishing as a Standard Linked Open Data Model
+> **UPDATED** this tutorial has been changed to define the pipeline dynamically. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/advanced-conversion).
+
 This quick start guide will show you how to create a more advanced processing pipeline in the [LDIO Workbench](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) for converting our example model to a [standard open vocabulary](https://github.com/vocol/mobivoc) and to publish that as a [Linked Data Event Stream (LDES)](https://semiceu.github.io/LinkedDataEventStreams/).
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
 
 ## Copy & Paste Rules!
-To kickstart this tutorial we can use the [basic setup tutorial](./basic-setup/README.md).
+To kickstart this tutorial we can use the [basic setup tutorial](../basic-setup/README.md).
 
 For the server we only will need to change the actual model. Everything else can stay the same: we will still need to volume mount the server configuration file and provide the database connection string (which we have changed to reflect our tutorial).
 
@@ -76,7 +78,7 @@ input:
   name: Ldio:HttpInPoller
   config:
     url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
-    cron: 0 * * * * *
+    cron: 0 */2 * * * *
 ```
 
 This will ensure we receive the actual state of our parking lots at regular time intervals (e.g. every minute), which may or may not have changed since the last time we checked. We still need to configure an adapter to convert the received CSV message to linked data. We'll do that next.
@@ -106,7 +108,6 @@ We start by creating a simple intermediate model where we already set the correc
 To create a RML mapping file we need to write the RML rules in [Turtle](https://www.w3.org/TR/turtle/). All the Turtle prefixes should go at the start of the file but for simplicity we'll add the prefixes as we go. Let's start with the most common ones:
 
 ```text
-@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
 @prefix rr:     <http://www.w3.org/ns/r2rml#> .
 @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
@@ -118,9 +119,9 @@ To create a RML mapping file we need to write the RML rules in [Turtle](https://
 Now, we start by defining the map which will contain our mapping rules. We define a prefix for our map and rules (`:`) and tell the RML component that we will be mapping CSV messages. Do not forget that all prefixes go at the start before our mapping and rules.
 
 ```text
-@prefix :       <https://example.org/ns/tutorial/advanced-conversion#> .
+@prefix temp:   <https://temp.org/ns/advanced-compose#> .
 
-:TriplesMap a rr:TriplesMap;
+temp:TriplesMap a rr:TriplesMap;
   rml:logicalSource [
     a rml:LogicalSource;
     rml:source [ a carml:Stream ];
@@ -133,7 +134,7 @@ Let's continue now with defining the identity and type of our parking lots. Reme
 ```text
 @prefix mv:     <http://schema.mobivoc.org/#> .
 
-:TriplesMap rr:subjectMap [
+temp:TriplesMap rr:subjectMap [
   rr:graphMap [ rr:template "{urllinkaddress}" ];
   rml:reference "urllinkaddress";
   rr:class mv:ParkingLot
@@ -143,10 +144,7 @@ Let's continue now with defining the identity and type of our parking lots. Reme
 Easy enough. No? Let's continue with one property. We define a rule saying that the entity will have a property (predicate) named `temp:name` whose value (object) comes from the source property `name`.
 
 ```text
-@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix temp:   <https://temp.org/ns/advanced-compose#> .
-
-:TriplesMap rr:predicateObjectMap [
+temp:TriplesMap rr:predicateObjectMap [
   rr:predicate temp:name;
   rr:objectMap [ rml:reference "name" ]
 ].
@@ -157,7 +155,7 @@ Again, no rocket-science once you get used to the Turtle and RML syntax.
 Let's do the other properties as well. We define a rule to map each source property value onto the intermediate property. However, to make our life a bit easier in the next step, where we convert the intermediate to the target model, we can already add the correct value types.
 
 ```text
-:TriplesMap rr:predicateObjectMap [
+temp:TriplesMap rr:predicateObjectMap [
   rr:predicate temp:lastupdate;
   rr:objectMap [ rml:reference "lastupdate"; rr:datatype xsd:dateTime ]
 ], [
@@ -187,16 +185,11 @@ Let's do the other properties as well. We define a rule to map each source prope
 ].
 ```
 
-All of the above results in the [mapping to intermediate](./workbench/config/source-to-intermediate.ttl) file. In order to make it available to the workbench container we need to use volume mapping again. However, becomes we know we'll need an additional file for transforming the intermediate to the target format, we choose to map the directory containing the mapping file as a whole: 
+All of the above results in a mapping which we simply embed in our pipeline. So, we change our workbench pipeline to use a RML mapping component (`RmlAdapter`) and specify the above RML mapping as its [configuration](./definitions/csv-pipeline.yml#L11). Our CSV pipeline is now complete and looks like this (polls every 2 minutes):
 
 ```yaml
-volumes:
-    - ./workbench/config:/ldio/config:ro
-```
-
-We also need to change our workbench pipeline to use the above RML mapping file and to include the RML mapping component (`RmlAdapter` instead of the `JsonLdAdapter` used in the basic setup). Our workbench pipeline input component is now complete and looks like this (polls every 2 minutes):
-
-```yaml
+name: csv-pipeline
+description: "Polls for park-and-ride data in CSV format, converts to linked data & sends to our P&R pipeline."
 input:
   name: Ldio:HttpInPoller
   config:
@@ -205,16 +198,27 @@ input:
   adapter:
     name: Ldio:RmlAdapter
     config:
-      mapping: ./config/source-to-intermediate.ttl
+      mapping: |
+        @prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
+        @prefix rr:     <http://www.w3.org/ns/r2rml#> .
+        @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+        @prefix carml:  <http://carml.taxonic.com/carml/> .
+        @prefix mv:     <http://schema.mobivoc.org/#> .
+        @prefix temp:   <https://temp.org/ns/advanced-compose#> .
+
+        temp:TriplesMap a rr:TriplesMap;
+        ...
 ```
+
+> **Note** that we have actually split the workbench pipeline in two parts: a first pipeline that polls for the park & ride data, converts it to linked data (temporary format) using RML and send it to a second pipeline which then converts it to the standard model, creates a version object and sends that to the LDES Server. The reason we have split the pipeline is to show you polling for alternative data formats and handle these. 
 
 ## Pirates Take Anything They Can
 We could have also requested the data as [JSON]( https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/json?lang=en&timezone=Europe%2FBrussels) or [GeoJSON](https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/geojson?lang=en&timezone=Europe%2FBrussels). It is as simple as using a different URL. Of course, the mapping in RML is a bit different for these as the formats and model structures are different. You can verify [later](#whats-on-the-menu) that these data formats can also be used.
 
 ### Pirates Like JSON For Lunch
-The [JSON mapping](./workbench/config/json-to-intermediate.ttl) is slightly different as we need to tell the RML component to use JSON instead of CSV and how to iterate the JSON objects (for CSV it simply iterates over the non-header lines). So, now our map for JSON looks as this:
+The [JSON mapping](./definitions/json-pipeline.yml#L11) is slightly different as we need to tell the RML component to use JSON instead of CSV and how to iterate the JSON objects (for CSV it simply iterates over the non-header lines). So, now our map for JSON looks as this:
 ```text
-:TriplesMap a rr:TriplesMap;
+temp:TriplesMap a rr:TriplesMap;
   rml:logicalSource [
     a rml:LogicalSource;
     rml:source [ a carml:Stream ];
@@ -225,9 +229,9 @@ The [JSON mapping](./workbench/config/json-to-intermediate.ttl) is slightly diff
 > **Note** that our `rml:referenceFormulation` now uses `ql:JSONPath` and that we added `rml:iterator "$.*"` to tell it to iterate over the array elements.
 
 ### Pirates Like GeoJSON For Dinner
-The [GeoJSON mapping](./workbench/config/geojson-to-intermediate.ttl) is very similar to the [JSON mapping](./workbench/config/json-to-intermediate.ttl). Allthough the GeoJSON structure is centered around `features` which contain a `geometry` and `properties` we can get away with ignoring the `geometry` as the `properties` also contain the `latitude` and `longitude` values. Basically we can iterate the elements in the `features` array and select the `properties`:
+The [GeoJSON mapping](./definitions/geojson-pipeline.yml#L11) is very similar to the [JSON mapping](./definitions/json-pipeline.yml#L11). Allthough the GeoJSON structure is centered around `features` which contain a `geometry` and `properties` we can get away with ignoring the `geometry` as the `properties` also contain the `latitude` and `longitude` values. Basically we can iterate the elements in the `features` array and select the `properties`:
 ```text
-:TriplesMap a rr:TriplesMap;
+temp:TriplesMap a rr:TriplesMap;
   rml:logicalSource [
     a rml:LogicalSource;
     rml:source [ a carml:Stream ];
@@ -348,95 +352,67 @@ Because a blank node has no identity, we can write the above a bit more condense
 
 > **Note** that `[ ... ]` now represents our _capacity_.
 
-Now that we have learned how to introduce structure in our target model we can create the [complete mapping](./workbench/config/intermediate-to-target.rq) using SPARQL construct and we need to add this transformation step in the workbench pipeline:
+Now that we have learned how to introduce structure in our target model we can create the [complete mapping](./definitions/park-n-ride-pipeline.yml#L10) using SPARQL construct and we need to embed this transformation step in the workbench pipeline:
 
 ```yaml
 transformers:
   - name: Ldio:SparqlConstructTransformer
     config:
-      query: ./config/intermediate-to-target.rq
+      query: |
+        PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX dct:     <http://purl.org/dc/terms/>
+        PREFIX schema:  <http://schema.org/>
+        PREFIX mv:      <http://schema.mobivoc.org/#>
+        PREFIX temp:    <https://temp.org/ns/advanced-compose#>
+        PREFIX wgs84:   <http://www.w3.org/2003/01/geo/wgs84_pos#>
+        CONSTRUCT {
+          ...
 ```
 
-In addition, as our target model has changed, we need to fix the transformation step which creates the version object to:
-
-```yaml
-  - name: Ldio:VersionObjectCreator
-    config:
-      member-type: http://schema.mobivoc.org/#ParkingLot
-      delimiter: "/"
-      date-observed-property: <http://purl.org/dc/terms/modified>
-      generatedAt-property: http://purl.org/dc/terms/modified
-      versionOf-property: http://purl.org/dc/terms/isVersionOf
-```
-
-And also the [definition of the LDES](./definitions/occupancy.ttl) to reflect the correct target class:
-```text
-@prefix mv:          <http://schema.mobivoc.org/#>
-
-</occupancy> a ldes:EventStream ;
-	tree:shape [ a sh:NodeShape ; sh:targetClass mv:ParkingLot ] ;
-```
-
-> **Note** that from LDES server v2.7.0 on you do not need to define the target class as the LDES server allows us to ingest entities with any type allowing for mixed streams of entity versions. A small step for the team but a giant step for data publishers because they now have the choice to host one LDES per entity type, one LDES for all their entities or any other configuration of their choosing. The LDES definition now becomes (we simply drop the `sh:targetClass mv:ParkingLot` triple):
-> ```text
-> @prefix mv:          <http://schema.mobivoc.org/#>
-> 
-> </occupancy> a ldes:EventStream ;
-> 	tree:shape [ a sh:NodeShape ] ;
-> ```
-
-> **Note** that in the [complete mapping](./workbench/config/intermediate-to-target.rq) when we query the properties from our source model that almost all of these query lines are wrapped by an `optional { ... }` construct. The reason for this is that any of these triples may be missing. Remember that the `WHERE` clause is in essence a filter on the collection of source triples, where each query line refines the subset of results from the previous query line. Therefore, if we do not use `optional` then the query returns no results and hence no target entity is constructed.
+> **Note** that in the [complete mapping](./definitions/park-n-ride-pipeline.yml#L10) when we query the properties from our source model that almost all of these query lines are wrapped by an `optional { ... }` construct. The reason for this is that any of these triples may be missing. Remember that the `WHERE` clause is in essence a filter on the collection of source triples, where each query line refines the subset of results from the previous query line. Therefore, if we do not use `optional` then the query returns no results and hence no target entity is constructed.
 
 ## Enough Talk, Show Me the Members
-Now that we have set everything up, we can launch our systems. We cannot launch both our LDES server and our workbench at the same time because we are now polling for the data and our workbench pipeline will start immediately. This is a problem because we first need to send the definition of our LDES and view to the LDES server. Actually, it takes our LDES server longer to start than our workbench, so we need to prevent launching the workbench until our LDES server is up and running and we have seeded our definitions. To prevent our workbench to launch when we bring all our other systems up, we can add a `profile` to the [Docker compose](./docker-compose.yml) file in the workbench service. The actual name of the profile does not matter but we use `delay-started` to clearly communicate the purpose:
+Now that we have set everything up, we can launch our systems and wait for them to be available:
 
-```yaml
-ldio-workbench:
-  container_name: advanced-conversion_ldio-workbench
-  image: ghcr.io/informatievlaanderen/ldi-orchestrator:latest
-  volumes:
-    - ./workbench/config:/ldio/config:ro
-    - ./workbench/application.yml:/ldio/application.yml:ro
-  ports:
-    - 9004:80
-  networks:
-    - advanced-conversion 
-  profiles:
-    - delay-started
-```
-
-To run the LDES server and its storage service (mongo), wait until its up and running, send definitions and then start the workbench:
 ```bash
 clear
 
-# start and wait for the server and database systems
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# start for all systems and wait for them to be available
+docker compose up -d --wait
 
 # define the LDES and the view
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
-# start and wait for the workbench
-docker compose up ldio-workbench -d
-while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# define our pipelines and start polling for CSV data
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/park-n-ride-pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/csv-pipeline.yml
 ```
 
-> **Note** that it may take up to two minutes before you see any data as the polling component runs every 2 minutes. You can see this in the docker logs for the workbench e.g. (notice the timestamps at the start of the lines):
->```
-> 2024-01-18T13:04:34.805Z  INFO 1 --- [           main] b.v.i.ldes.ldio.Application              : Started Application in 5.447 seconds (process running for 6.163)
-> 2024-01-18T13:06:00.845Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-01-18T14:02:57+01:00
-> 2024-01-18T13:06:00.979Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal#2024-01-18T14:02:57+01:00
-> 2024-01-18T13:06:01.036Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-wondelgem-industrieweg#2024-01-18T14:02:34+01:00
-> 2024-01-18T13:06:01.078Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2024-01-18T14:02:57+01:00
-> 2024-01-18T13:06:01.114Z  INFO 1 --- [onPool-worker-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-oostakker#2024-01-18T14:02:57+01:00
->```
+Please verify that both pipelines are running:
+```bash
+curl http://localhost:9004/admin/api/v1/pipeline/status
+```
+which should return:
+```json
+{"csv-pipeline":"RUNNING","park-n-ride-pipeline":"RUNNING"}
+```
 
-To view the docker logs yourself you can execute the following (in a bash shell):
+After a bit of time, you will see something similar to this in the workbench docker log:
+```text
+2024-04-18T14:18:00.881Z  INFO 1 --- [p-nio-80-exec-1] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-04-18T16:15:27+02:00
+2024-04-18T14:18:00.881Z  INFO 1 --- [-nio-80-exec-10] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-04-18T16:15:27+02:00
+2024-04-18T14:18:00.938Z  INFO 1 --- [p-nio-80-exec-2] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-04-18T16:15:27+02:00
+2024-04-18T14:18:00.942Z  INFO 1 --- [p-nio-80-exec-3] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-wondelgem-industrieweg#2024-04-18T16:15:10+02:00
+2024-04-18T14:18:00.977Z  INFO 1 --- [p-nio-80-exec-4] b.v.i.ldes.ldi.VersionObjectCreator      : Created version: https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-bourgoyen#2024-04-18T16:15:27+02:00
+```
+
+ To display and keep following the workbench log for updates you can execute the following:
 ```bash
 docker logs -f $(docker ps -q -f "name=ldio-workbench$")
 ```
-This will display and keep following the workbench logs for updates. Press `CTRL-C` to stop following the logs.
+Press `CTRL-C` to stop following the logs.
 
 To verify the LDES, view and data:
 ```bash
@@ -503,47 +479,38 @@ The last URL will contain our members, looking something like this (limited to o
 > **Note** that every two minutes the pipeline will request the latest state of our parking lots and will create additional version objects. The identity of a member depends only on the `lastupdate` property of our parking lot. If that did not change for a parking lot then the pipeline will create a version object with an identical identity as before. Any such version object will be refused by the LDES server and a warning will be logged in the LDES server log. The new version objects are added to the LDES and become new members.
 
 ## What's On The Menu?
-Above we have assumed that the input is CSV. We have seen [previously](#pirates-take-anything-they-can) that JSON and GeoJSON can also be converted to Linked Data using RML. In order to verify this, you need to change the [docker compose file](./docker-compose.yml) to use the [alternative pipelines](./workbench/alternative.yml) in the workbench by mapping that file as the workbench configuration file:
+Above we have assumed that the input is CSV. We have seen [previously](#pirates-take-anything-they-can) that JSON and GeoJSON can also be converted to Linked Data using RML. In order to verify this, you need to stop or remove the [CSV pipeline](./definitions/csv-pipeline.yml) and start the [JSON pipeline](./definitions/json-pipeline.yml) or the [GeoJSON pipeline](./definitions/geojson-pipeline.yml).
 
-```yaml
-  ldio-workbench:
-    container_name: advanced-conversion_ldio-workbench
-    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
-    volumes:
-      - ./workbench/config:/ldio/config:ro
-      - ./workbench/alternative.yml:/ldio/application.yml:ro
-    ...
+To stop the a pipeline use, e.g. the CSV pipeline:
+```bash
+curl -X POST http://localhost:9004/admin/api/v1/pipeline/csv-pipeline/halt
+```
+The CSV pipeline is now stopped/halted.
+
+Now you can run the JSON pipeline:
+```bash
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/json-pipeline.yml
+```
+You can follow the workbench log again to see new version objects being created every poll cycle.
+
+To stop the JSON pipeline use:
+```bash
+curl -X POST http://localhost:9004/admin/api/v1/pipeline/json-pipeline/halt
 ```
 
-**Note** that the last line maps `./workbench/alternative.yml` instead of `./workbench/application.yml` to `/ldio/application.yml`.
-
-To start the systems you can use the same instructions:
+To run the GeoJSON pipeline use:
 ```bash
-clear
-
-# start and wait for the server and database systems
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
-
-# define the LDES and the view
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
-
-# start and wait for the workbench
-docker compose up ldio-workbench -d
-while ! docker logs $(docker ps -q -f "name=ldio-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/geojson-pipeline.yml
 ```
 
-Because we have used HTTP listeners as input components and not a HTTP poller you need to send a test message to the (Geo)JSON pipeline. You can verify that the (Geo)JSON is correctly translated by looking at the LDES in the same way as above.
-
-To send the JSON test message to the JSON pipeline:
+To stop the GeoJSON pipeline use:
 ```bash
-curl -X POST -H "Content-Type: application/json" "http://localhost:9004/json-pipeline" -d "@./data/message.json"
+curl -X POST http://localhost:9004/admin/api/v1/pipeline/geojson-pipeline/halt
 ```
 
-To send the JSON test message to the JSON pipeline:
+Finally, to resume the CSV pipeline again:
 ```bash
-curl -X POST -H "Content-Type: application/json" "http://localhost:9004/geojson-pipeline" -d "@./data/message.geo.json"
+curl -X POST http://localhost:9004/admin/api/v1/pipeline/csv-pipeline/resume
 ```
 
 To verify the LDES, view and data:
@@ -558,7 +525,6 @@ You can also simply look at the workbench docker logs file to verify that the me
 ```bash
 docker logs -f $(docker ps -q -f "name=ldio-workbench$")
 ```
-
 > **Note** use `CTRL-C` to stop following the logs.
 
 ## Every End is a New Beginning
@@ -566,7 +532,6 @@ You should now know some basics about linked data. You learned how to define a m
 
 To bring the containers down and remove the private network:
 ```bash
-docker compose rm ldio-workbench --stop --force --volumes
 docker compose down
 ```
 

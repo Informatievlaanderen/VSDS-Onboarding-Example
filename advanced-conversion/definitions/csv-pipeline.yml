@@ -1,0 +1,66 @@
+name: csv-pipeline
+description: "Polls for park-and-ride data in CSV format, converts to linked data & sends to our P&R pipeline."
+input:
+  name: Ldio:HttpInPoller
+  config:
+    url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
+    cron: 0 */2 * * * *
+  adapter:
+    name: Ldio:RmlAdapter
+    config:
+      mapping: |
+        @prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
+        @prefix rr:     <http://www.w3.org/ns/r2rml#> .
+        @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+        @prefix carml:  <http://carml.taxonic.com/carml/> .
+        @prefix mv:     <http://schema.mobivoc.org/#> .
+        @prefix temp:   <https://temp.org/ns/advanced-compose#> .
+
+        temp:TriplesMap a rr:TriplesMap;
+          rml:logicalSource [
+            a rml:LogicalSource;
+            rml:source [ a carml:Stream ];
+            rml:referenceFormulation ql:CSV
+          ];
+          rr:subjectMap [
+            rr:graphMap [ rr:template "{urllinkaddress}" ];
+            rml:reference "urllinkaddress";
+            rr:class mv:ParkingLot
+          ];
+          rr:predicateObjectMap [
+            rr:predicate temp:name;
+            rr:objectMap [ rml:reference "name" ]
+          ],[
+            rr:predicate temp:lastupdate;
+            rr:objectMap [ rml:reference "lastupdate"; rr:datatype xsd:dateTime ]
+          ], [
+            rr:predicate temp:openingtimesdescription;
+            rr:objectMap [ rml:reference "openingtimesdescription" ]
+          ], [
+            rr:predicate temp:operatorinformation;
+            rr:objectMap [ rml:reference "operatorinformation" ]
+          ], [
+            rr:predicate temp:freeparking;
+            rr:objectMap [ rml:reference "freeparking"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:numberofspaces;
+            rr:objectMap [ rml:reference "numberofspaces"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:availablespaces;
+            rr:objectMap [ rml:reference "availablespaces"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:occupation;
+            rr:objectMap [ rml:reference "occupation"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:latitude;
+            rr:objectMap [ rml:reference "latitude"; rr:datatype xsd:double ]
+          ], [
+            rr:predicate temp:longitude;
+            rr:objectMap [ rml:reference "longitude"; rr:datatype xsd:double ]
+          ].
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://localhost/park-n-ride-pipeline
+      rdf-writer:
+        content-type: application/n-triples
