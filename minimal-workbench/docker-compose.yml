@@ -6,7 +6,7 @@ services:
 
   ldio-workbench:
     container_name: minimal-workbench_ldio-workbench
-    image: ldes/ldi-orchestrator:2.4.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldi-orchestrator:2.5.0-SNAPSHOT
     volumes:
       - ./config/application.yml:/ldio/application.yml:ro
     ports:
@@ -14,4 +14,4 @@ services:
     networks:
       - minimal-workbench 
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server-workbench:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench:8080/actuator/health"]

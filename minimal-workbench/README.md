@@ -76,7 +76,7 @@ There is no visual component yet for the LDIO workbench, but you can check its s
 
 The workbench is now ready to receive our pipeline. We can use the LDIO Workbench admin API to tell it to use our pipeline:
 ```bash
-curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/park-n-ride-pipeline.yml
 ```
 
 You can check that the pipeline is actually running:
@@ -118,7 +118,7 @@ Since it is a small and straight forward message the workbench log will almost i
 
 To watch the version object appear in the workbench log
 ```bash
-docker logs -n 25 $(docker ps -q -f "name=ldio-workbench$")
+docker logs -n 24 $(docker ps -q -f "name=ldio-workbench$")
 ```
 
 You should see the following:
