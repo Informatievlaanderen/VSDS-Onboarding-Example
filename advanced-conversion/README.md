@@ -1,5 +1,5 @@
 # Publishing as a Standard Linked Open Data Model
-> **UPDATED** this tutorial has been changed to define the pipeline dynamically. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/advanced-conversion).
+> **UPDATED** this tutorial has been changed to define the pipeline dynamically and to explain a bit more or state and version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/advanced-conversion).
 
 This quick start guide will show you how to create a more advanced processing pipeline in the [LDIO Workbench](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) for converting our example model to a [standard open vocabulary](https://github.com/vocol/mobivoc) and to publish that as a [Linked Data Event Stream (LDES)](https://semiceu.github.io/LinkedDataEventStreams/).
 
@@ -210,7 +210,7 @@ input:
         ...
 ```
 
-> **Note** that we have actually split the workbench pipeline in two parts: a first pipeline that polls for the park & ride data, converts it to linked data (temporary format) using RML and send it to a second pipeline which then converts it to the standard model, creates a version object and sends that to the LDES Server. The reason we have split the pipeline is to show you polling for alternative data formats and handle these. 
+> **Note** that we have actually split the workbench pipeline in two parts: a first pipeline that polls for the park & ride data, converts it to linked data (temporary format) using RML and send it to a second pipeline which then converts it to the standard model, creates a version object (see [later](#time-is-like-a-clock-in-my-heart)) and sends that to the LDES Server. The reason we have split the pipeline is to show you polling for alternative data formats and handle these. 
 
 ## Pirates Take Anything They Can
 We could have also requested the data as [JSON]( https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/json?lang=en&timezone=Europe%2FBrussels) or [GeoJSON](https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/geojson?lang=en&timezone=Europe%2FBrussels). It is as simple as using a different URL. Of course, the mapping in RML is a bit different for these as the formats and model structures are different. You can verify [later](#whats-on-the-menu) that these data formats can also be used.
@@ -371,6 +371,57 @@ transformers:
 ```
 
 > **Note** that in the [complete mapping](./definitions/park-n-ride-pipeline.yml#L10) when we query the properties from our source model that almost all of these query lines are wrapped by an `optional { ... }` construct. The reason for this is that any of these triples may be missing. Remember that the `WHERE` clause is in essence a filter on the collection of source triples, where each query line refines the subset of results from the previous query line. Therefore, if we do not use `optional` then the query returns no results and hence no target entity is constructed.
+
+## Time Is Like a Clock in My Heart
+If you looked closely at the [Park & Ride pipeline](./definitions/park-n-ride-pipeline.yml) you may have noticed that we also added a component to create version objects ourselves:
+
+```yaml
+- name: Ldio:VersionObjectCreator
+  config:
+    member-type: http://schema.mobivoc.org/#ParkingLot
+    delimiter: "#"
+    date-observed-property: <http://purl.org/dc/terms/modified>
+    generatedAt-property: http://purl.org/dc/terms/modified
+    versionOf-property: http://purl.org/dc/terms/isVersionOf
+```
+
+In the previous examples ([Setting up a minimal LDES Server](./minimal-server/README.md), [Setting up a minimal LDIO Workbench](./minimal-workbench/README.md) and [Publishing a simple data set with a basic setup](./basic-setup/README.md)) we let the LDES Server handle this for us by providing a flag (`ldes:createVersions true ;`) in the LDES definition. So, why did we now add this component? And why did we not need to do that in the previous examples? Well, it turns out that there are pros and cons to both approaches and sometimes we have to choose one or the other by necessity. But first, a bit of theory!
+
+If you look at the state of a software system, you will see that it consists of data modelled in a particular way dependant on its domain. This state changes over time when humans or other systems interact with it. Many times we only care about the latest state of such a system but sometimes we need to know the subsequent changes of the models in a system in order to be able to take decisions or calculate values based on the history of the individual model changes, e.g. your bank account balance, the level of water in a river, etc. Systems that need to keep the history of changes will typically store the event that lead to a model change as well as the (partial or full) model state in a append-only way (Event Streaming).
+
+A Linked Data Event Stream (LDES) is actually very similar: it allows us to store all the model states changes that happen in a (source) system as linked data using a LDES Server and offers a way to duplicate (replicate) them using a LDES Client to another (destination) system downstream, ensuring that the latter is aware of all new changes (synchronize) in a continuous way (streaming). While nothing keeps us from having the event that triggered the state change in the LDES member, typically it will only contain the (full!) model state. So, a state object is the actual state of a model, while a version object is that state object at some point in time. Basically, all version objects for a particular state object define the changes over time of the model for which the state changed. You need to wrap your head around these concepts, but once you do, it is very simple.
+
+Actually, when you define a LDES you provide two properties: a `ldes:timestampPath` and a `ldes:versionOfPath`, e.g.:
+```text
+</occupancy> a ldes:EventStream ;
+  ...
+  ldes:timestampPath prov:generatedAtTime ;
+  ldes:versionOfPath dcterms:isVersionOf .
+```
+The `ldes:versionOfPath` provides the property that is used to refer from the version object (i.e. historical object, point-in-time object) to the state object it is derived from and the `ldes:timestampPath` defines the property holding the date/time value for the point-in-time. Typically we use `dcterms:isVersionOf` (in full: http://purl.org/dc/terms/isVersionOf) respectively `prov:generatedAtTime` (in full: http://www.w3.org/ns/prov#generatedAtTime) but you can use something else as long as the semantics (meaning) is similar or equivalent (e.g. `dcterms:modified`). In fact, if you think about it, these two properties allow us to group together version objects about some model and order them so we get the changes over time.
+
+Enough theory! Let's look at when to create these versions yourself versus having the LDES Server do it for you. But before we do that, let me tell you about how the LDES Server does this.
+
+When you push one or more state objects to the LDES Server, it will look at the linked data and validate that there are no dangling nor shared blank nodes. Why is that? Well, as you know by now, a named node identifies something (a model!) that is identifiable while a blank nodes is something which is part of such a model and cannot exist on its own. The LDES Server can create a version object for some (identifiable!) model state but clearly that is not possible for a blank node. Therefore any dangling blank node (i.e. a blank node that does not belong to a named node) would not be versioned and data would be lost. A shared blank node is one that is used by two or more named nodes (state objects) and would have to be duplicated for each named node that uses it because the version objects created for these named nodes could be split across different LDES fragments on retrieval. Clearly that would be a problem because a state object would not be complete it the shared (sub)-state was not de-duplicated. However, in our opinion, this de-duplication is *not* a functionality that belongs to a LDES Server but rather a task for the source system. Any message containing a dangling or shared blank node results in the message being refused. After this validation, the LDES Server creates a *new version* for *each* named node (i.e. state object) after grouping together all RDF statements (triples) that directly or indirectly (blank nodes) belong to that model (i.e. it recusively follows are referenced blank nodes).
+
+>**Note** that we emphasized that you can ingest state objects in *bulk* and that the LDES Server creates a version *each* time!
+
+But what if the model did *not* change its state? Obviously, we do not want to create a version if the state did not change. So, either we do not send those state objects to the LDES Server or we create versions ourselves and send those to the LDES Server. Moreover, if we have a pipeline where we request for data (i.e. we poll a source system API) we typically will get the current state of a system, that is, we get all changed and unchanged models. Unless we want the LDES Server to create unneeded version objects, we need to do our own state change detection and create versions ourselves. 
+
+>**Note** that the LDES Server will verify for a version object if it has already received one with the same ID. As a version object is considered *immutable*  (should not change!) it will *not* store it again, but instead the LDES Server will log a warning and ignore the duplicate member (version object).
+
+So, how can we detect changes? Well, clearly as the model can be large we do not want to do a full comparison to verify that a model has been altered but rather we want to rely on some modification or update timestamp. Therefore, we can use such a timestamp to create the versions and count on the LDES Server to ignore duplicate version objects. When we use polling we typically will create versions ourselves based on some timestamp property.
+
+Now, in case we have a pipeline accepting data (i.e. the source system pushes messages) there are two options. If the source system only pushes changes, we can leave the version object creating to the LDES Server or we create versions in the workbench pipeline (typically right before outputting to the LDES Server) based on some date/time property or the current time. However, if the source system pushes the current state of its models and not the changes, then we use a update or modification timestamp in the model to create our version objects in the pipeline and send those to the LDES Server.
+
+OK, time for a summary! The rules are really simple:
+1. If your source system pushes changes to your workbench pipeline, simply convert your models to linked data (state objects) and let the LDES Server worry about versioning.
+2. If your source system pushes complete state and the model contains a changed timestamp, create version objects in the pipeline based on this timestamp and send these versions to the LDES Server.
+3. If your source system pushes complete state but there is no timestamp you can use, let the LDES Server create a new version each time. Not ideal because too many version will exist negatively impacting storage. In addition, downstream (destination) systems will receive too many updates and have to cope with that.
+4. If your workbench pipeline polls for object model changes (API allow some sort of change subscription) and the source system provides a timestamp, create version based on that timestamp.
+5. If your workbench pipeline polls for object model changes but there is no timestamp (very unlikely), let the LDES Server create a new version each time. This is not really a problem as the LDES Server does not create too many versions.
+6. If your workbench pipeline polls for a full state model and that model contains a changed timestamp, create version based on that timestamp and send versions to the LDES Server.
+7. If your workbench pipeline polls for a full state model but there is no timestamp in the model, let the LDES Server worry about versioning. Again, the latter results in a new version on each poll cycle, negatively impacting storage and destination systems.
 
 ## Enough Talk, Show Me the Members
 Now that we have set everything up, we can launch our systems and wait for them to be available:
