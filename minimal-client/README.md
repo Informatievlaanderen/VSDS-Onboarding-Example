@@ -1,5 +1,5 @@
 # Setting Up a Minimal LDES Client
-> **UPDATED** this tutorial has been changed to define the publish pipeline dynamically and to add a (test) sink system. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/basic-client).
+> **UPDATED** this tutorial has been changed to define the publish pipeline dynamically and to add a (test) sink system. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/minimal-client).
 
 This tutorial will show you how to setup a minimal LDES CLient in order to replicate and synchronize an existing Linked Data Event Stream (LDES).
 
