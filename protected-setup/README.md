@@ -337,37 +337,21 @@ ldes-server:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:
   #   - 9003:80
-  networks:
-    - protected-setup
-  depends_on:
-    - ldes-mongodb
-  environment:
-    - SIS_DATA=/tmp
-    - SERVER_SERVLET_CONTEXTPATH=/ldes
-    - LDESSERVER_HOSTNAME=${LDES_SERVER_HOST_NAME:-http://localhost:9003/ldes}
-    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
+  ...
 ```
 
 ### Access the LDES Server Through the Reverse Proxy
-Once the LDES Server is not directly accessible anymore, we need to define some environment variables to use the reverse proxy instead:
-```
-LDES_SERVER_HOST_NAME=http://localhost:9005/feed
-LDES_SERVER_URL=http://localhost:9005/feed/occupancy
-```
-and we need to pass our `user.env` file to all our docker compose commands.
-
-Of course, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes. In the client workbench we need to uncomment the LDES CLient component configuration to include this API key:
+Once the LDES Server is not directly accessible anymore, we need to change the `LDESSERVER_HOSTNAME` environment variable to `http://localhost:9005/feed` to use the reverse proxy instead. We also need to change the LDES Client configuration to use a new URL (`http://localhost:9005/feed/occupancy`). Finally, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes:
 ```yaml
-input:
   name: Ldio:LdesClient
   config:
     urls: 
-      - ${LDES_SERVER_URL}
-    sourceFormat: application/n-triples
+      - http://localhost:9005/feed/occupancy
     auth:
       type: API_KEY
       api-key-header: x-api-key
       api-key: client-two-secret
+    ...
 ```
 
 Show time! But first bring down all systems so we can start with a clean slate:
@@ -383,7 +367,7 @@ clear
 # start and wait for the server and database systems
 LDESSERVER_HOSTNAME=http://localhost:9005/feed && docker compose up -d --wait
 
-# upload LDES & view definitions
+# define the LDES and the view
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
@@ -392,12 +376,20 @@ curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http:/
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/dcat" -d "@./definitions/metadata/occupancy.ttl"
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 
-# start and wait for the server workbench
-docker compose up server-workbench -d --wait
+# start the publish and client pipelines
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/publish-pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./definitions/protected-client-pipeline.yml
 
-# start and wait for the client workbench
-docker compose up client-workbench -d --wait
+# check the sink system
+while true; do curl http://localhost:9007; echo ""; sleep 15; done
 ```
+> **Note** that we:
+> * define `LDESSERVER_HOSTNAME` before launching the systems,
+> * use the admin endpoint (`http://localhost:9005/admin`) for sending LDES and metadata definitions,
+> * provide our admin x-api-key for these requests, and
+> * use a different pipeline (`protected-client-pipeline`).
+
+Press `CTRL-C` to stop following the member count in the sink system.
 
 It all goes well (and it should!) you will see the LDES members appear in the sink.
 
@@ -406,7 +398,5 @@ We have shown you how to enable the swagger UI, how to provide metadata for your
 
 Now that you have verified that the members appear in the sink you can shutdown the systems and remove the private network using:
 ```bash
-docker compose rm client-workbench --stop --force --volumes
-docker compose rm server-workbench --stop --force --volumes
 docker compose down
 ```
