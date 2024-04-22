@@ -35,6 +35,7 @@ We suggest you look at the examples in the following order, but of course, feel 
 * [Publishing a simple data set with a basic setup](./basic-setup/README.md) (converting to linked data before ingesting it)
 * [Publishing as a standard linked open data model](./advanced-conversion/README.md) (using a standard vocabulary for publication)
 * [Publishing a protected LDES](./protected-setup/README.md) (limitting access to a LDES)
+* [Publishing an enriched data model](./enrich-model/README.md) (combining linked data models)
 
 ### Tutorials for Data Clients
 * [Setting up a minimal LDES Client](./minimal-client/README.md) (consuming a local LDES)
