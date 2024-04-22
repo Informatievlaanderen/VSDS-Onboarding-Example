@@ -1,15 +1,28 @@
-version: '2.0'
+networks:
+  basic-client:
+    name: basic-client-network
 
 services:
 
   ldio-workbench:
     container_name: basic-client_ldio-workbench
-    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
-    environment:
-      - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-      - SINK_URL=${SINK_URL}
-      - RATE_LIMIT_MAX=50
-      - RATE_LIMIT_PERIOD=PT1M
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     volumes:
       - ./application.yml:/ldio/application.yml:ro
     network_mode: "host"
+    environment:
+      - LDIO_WORKBENCH_PORT=9006
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
+
+
+  sink-system:
+    container_name: basic-client_sink-system
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9007:80
+    networks:
+      - basic-client
+    environment:
+      - MEMORY=true
+      - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot

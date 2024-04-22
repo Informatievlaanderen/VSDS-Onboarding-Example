@@ -1,23 +1,2 @@
 server:
-  port: 9005
-
-orchestrator:
-  pipelines:
-
-    # This is a pipeline for demonstrating a basic LDES client which can replicate and synchronize an existing LDES
-    - name: client-pipeline
-      description: "Requests all existing members from a public LDES server and keeps following it for changes, sending each member as-is to a webhook"
-      input:
-        name: Ldio:LdesClient
-        config:
-          urls: 
-            - ${LDES_SERVER_URL}
-          sourceFormat: application/n-quads
-      outputs:
-        - name: Ldio:HttpOut
-          config:
-            endpoint: ${SINK_URL}
-            rate-limit:
-              enabled: true
-              limit: ${RATE_LIMIT_MAX}
-              period: ${RATE_LIMIT_PERIOD}
+  port: ${LDIO_WORKBENCH_PORT}
