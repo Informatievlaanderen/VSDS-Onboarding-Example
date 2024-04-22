@@ -1,0 +1,20 @@
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/cars/Volvo/XC40>
+  a schema:Car ;
+  schema:brand "Volvo" ;
+  schema:max-speed "180"^^xsd:integer ;
+  schema:model "XC40" .
+
+<http://example.com/cars/Ferrari/F40>
+  a schema:Car ;
+  schema:brand "Ferrari" ;
+  schema:max-speed "315"^^xsd:integer ;
+  schema:model "F40" .
+
+<http://example.com/cars/Reliant/Robin>
+  a schema:Car ;
+  schema:brand "Reliant" ;
+  schema:max-speed "136"^^xsd:integer ;
+  schema:model "Robin" .

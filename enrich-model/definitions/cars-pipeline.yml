@@ -1,0 +1,22 @@
+name: cars-pipeline
+input:
+  name: Ldio:HttpIn
+  adapter:
+    name: Ldio:RdfAdapter
+transformers:
+  - name: Ldio:SparqlConstructTransformer
+    config:
+      query: |
+        PREFIX schema: <http://schema.org/>
+        CONSTRUCT {
+          GRAPH ?car { ?car ?cp ?co . }
+        } WHERE {
+          ?car a schema:Car .
+          ?car ?cp ?co .
+        }
+outputs:
+  - name: Ldio:RepositoryMaterialiser
+    config:
+      sparql-host: http://graph-database:8080/rdf4j-server
+      repository-id: cars
+      batch-size: 3

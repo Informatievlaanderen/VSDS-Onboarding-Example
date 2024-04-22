@@ -1,0 +1,41 @@
+networks:
+  enrich-model:
+    name: enrich-model-network
+
+services:
+
+  graph-database:
+    container_name: enrich-model_graph-database
+    image: eclipse/rdf4j-workbench:latest
+    ports:
+      - 9008:8080
+    networks:
+      - enrich-model
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-s", "-H", "'application/sparql-results+xml'", "http://graph-database:8080/rdf4j-server/repositories"]
+
+
+  ldio-workbench:
+    container_name: enrich-model_ldio-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    environment:
+      - SERVER_PORT=80
+      - LOGGING_LEVEL_ROOT=INFO
+    ports:
+      - 9006:80
+    networks:
+      - enrich-model
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench/actuator/health"]
+
+
+  sink-system:
+    container_name: enrich-model_sink-system
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9007:80
+    networks:
+      - enrich-model
+    environment:
+      - MEMORY=true
+      - MEMBER_TYPE=http://schema.org/Person

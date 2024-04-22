@@ -1,0 +1,17 @@
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix repo:       <http://www.openrdf.org/config/repository#>.
+@prefix repo_sail:  <http://www.openrdf.org/config/repository/sail#>.
+@prefix sail:       <http://www.openrdf.org/config/sail#>.
+@prefix sail_mem:   <http://www.openrdf.org/config/sail/memory#>.
+
+[] a repo:Repository ;
+  repo:repositoryID "cars" ;
+  rdfs:label "memory store for cars" ;
+  repo:repositoryImpl [
+    repo:repositoryType "openrdf:SailRepository" ;
+    repo_sail:sailImpl [
+      sail:sailType "openrdf:MemoryStore" ;
+      sail_mem:persist true ;
+      sail_mem:syncDelay 120
+    ]
+  ].

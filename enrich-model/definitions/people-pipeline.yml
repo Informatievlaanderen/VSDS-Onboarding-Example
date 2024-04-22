@@ -1,0 +1,23 @@
+name: people-pipeline
+input:
+  name: Ldio:HttpIn
+  adapter:
+    name: Ldio:RdfAdapter
+transformers:
+  - name: Ldio:SparqlConstructTransformer
+    config:
+      query: |
+        PREFIX schema: <http://schema.org/>
+        CONSTRUCT {
+          ?ps ?pp ?po .
+          ?cs ?cp ?co .
+        }
+        WHERE { 
+          ?ps ?pp ?po .
+          ?ps schema:hasCar ?cs .
+          SERVICE <http://graph-database:8080/rdf4j-server/repositories/cars> { ?cs ?cp ?co . }
+        }
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://sink-system/member
