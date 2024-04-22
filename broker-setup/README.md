@@ -282,9 +282,7 @@ To see our Data Broker setup in action, you can use the following:
 clear
 
 # start and wait for the servers and databases
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=publisher-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
-while ! docker logs $(docker ps -q -f "name=broker-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+docker compose up -d --wait
 
 # upload Data Publisher LDES & view definitions
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./publisher-server/definitions/occupancy.ttl"
@@ -296,13 +294,9 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/ap
 curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./broker-server/definitions/occupancy.by-location.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./broker-server/definitions/occupancy.by-parking.ttl"
 
-# start and wait for the publisher workbench
+# start and wait for the publisher and broker workbench
 docker compose up publisher-workbench -d
-while ! docker logs $(docker ps -q -f "name=publisher-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
-
-# start and wait for the broker workbench
 docker compose up broker-workbench -d
-while ! docker logs $(docker ps -q -f "name=broker-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
 ```
 
 You can already check the existence of our additional Data Broker views using:

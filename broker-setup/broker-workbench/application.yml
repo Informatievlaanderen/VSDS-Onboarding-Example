@@ -1,5 +1,5 @@
 server:
-  port: 9006
+  port: 80
 
 orchestrator:
   pipelines:
@@ -12,7 +12,7 @@ orchestrator:
         config:
           urls: 
             - ${LDES_SERVER_URL}
-          sourceFormat: application/n-quads
+          sourceFormat: application/rdf+protobuf
       transformers:
         - name: Ldio:SparqlConstructTransformer
           config:
@@ -22,3 +22,5 @@ orchestrator:
         - name: Ldio:HttpOut
           config:
             endpoint: http://broker-server/ldes/occupancy
+            rdf-writer:
+              content-type: application/rdf+protobuf
