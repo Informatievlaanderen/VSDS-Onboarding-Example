@@ -6,7 +6,7 @@ services:
 
   ldio-workbench:
     container_name: minimal-workbench_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     volumes:
       - ./config/application.yml:/ldio/application.yml:ro
     ports:
