@@ -1,73 +1,89 @@
-version: '2.0'
-
 networks:
-  protected-setup:
-    name: protected-setup_ldes-network
+  protected-setup-server:
+    name: protected-setup_server-network
+  protected-setup-client:
+    name: protected-setup_client-network
 
 services:
 
   ldes-mongodb:
-    container_name: protected-setup_ldes-mongodb
+    container_name: protected-setup-server_ldes-mongodb
     image: mongo:latest
     ports:
       - 27017:27017
     networks:
-      - protected-setup
+      - protected-setup-server
 
 
   ldes-server:
-    container_name: protected-setup_ldes-server
-    image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    container_name: protected-setup-server_ldes-server
+    image: ldes/ldes-server:2.14.0-SNAPSHOT
     volumes:
       - ./ldes-server/application.yml:/application.yml:ro
-    # ports:
-    #   - 9003:80
+    ports:
+      - 9003:80
     networks:
-      - protected-setup
+      - protected-setup-server
     depends_on:
       - ldes-mongodb
     environment:
-      - MANAGEMENT_TRACING_ENABLED=false # TODO: remove this when pull-based tracing implemented
-      - LDES_SERVER_HOST_NAME=${LDES_SERVER_HOST_NAME:-http://localhost:9003/ldes}
+    - LDESSERVER_HOSTNAME=${LDESSERVER_HOSTNAME:-http://localhost:9003/ldes}
+    - SIS_DATA=/tmp
+    - SERVER_SERVLET_CONTEXTPATH=/ldes
+    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
 
 
   server-workbench:
-    container_name: protected-setup_server-workbench
-    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    container_name: protected-setup-server_server-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     volumes:
-      - ./server-workbench/config:/ldio/config:ro
       - ./server-workbench/application.yml:/ldio/application.yml:ro
     ports:
       - 9004:80
     networks:
-      - protected-setup 
-    profiles:
-      - delay-started
+      - protected-setup-server 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
+    depends_on:
+      - ldes-server
+
+      
+  # reverse-proxy:
+  #   image: nginx:stable
+  #   container_name: protected-setup-server_reverse-proxy
+  #   ports:
+  #     - 9005:8080
+  #   volumes:
+  #     - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
+  #   depends_on:
+  #     - ldes-server
+  #   networks:
+  #     - protected-setup-server 
 
 
   client-workbench:
-    container_name: protected-setup_client-workbench
-    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    container_name: protected-setup-server_client-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     environment:
-      - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-      - SINK_URL=${SINK_URL}
-      - RATE_LIMIT_MAX=50
-      - RATE_LIMIT_PERIOD=PT1M
+      - LDES_CLIENT_WORKBENCH_PORT=9006
     volumes:
       - ./client-workbench/application.yml:/ldio/application.yml:ro
     network_mode: "host"
-    profiles:
-      - delay-started
-
-      
-  reverse-proxy:
-    image: nginx:stable
-    container_name: protected-setup_reverse-proxy
-    ports:
-      - 9005:8080
-    volumes:
-      - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
     depends_on:
-      - ldes-server
+      - sink-system
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
+
+
+  sink-system:
+    container_name: protected-setup-server_sink-system
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9007:80
     networks:
-      - protected-setup 
+      - protected-setup-client
+    environment:
+      - MEMORY=true
+      - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot

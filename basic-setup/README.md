@@ -35,7 +35,7 @@ After that we add a LDES Server as a service, point it to its configuration file
 ```yaml
   ldes-server:
     container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.13.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.14.0-SNAPSHOT
     environment:
       - SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes
@@ -57,7 +57,7 @@ Finally, we add a LDIO Workbench as a service. It too needs to have access to it
 ```yaml
   ldio-workbench:
     container_name: basic-setup_ldio-workbench
-    image: ldes/ldi-orchestrator:2.4.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.5.0-SNAPSHOT
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -99,10 +99,10 @@ outputs:
     config:
       endpoint: http://ldes-server/ldes/occupancy
       rdf-writer:
-        content-type: application/n-quads
+        content-type: application/n-triples
 ```
 
-> **Note** that we can use the `rdf-writer.content-type` setting to change the RDF format used when sending the member to the LDES Server ingest endpoint. By default it is [Turtle](https://en.wikipedia.org/wiki/Turtle_(syntax)) (`text/turtle`) but here we choose [N-quads](https://en.wikipedia.org/wiki/N-Triples#N-Quads) (`application/n-quads`) as this is faster than any other RDF serialization both when writing and parsing.
+> **Note** that we can use the `rdf-writer.content-type` setting to change the RDF format used when sending the member to the LDES Server ingest endpoint. By default it is [Turtle](https://en.wikipedia.org/wiki/Turtle_(syntax)) (`text/turtle`) but here we choose [N-triples](https://en.wikipedia.org/wiki/N-Triples) (`application/n-triples`) as this is faster than any other RDF serialization both when writing and parsing.
 
 In our minimal workbench tutorial we assumed that we had linked data and we POST'ed a message formatted as [JSON-LD](https://json-ld.org/) to the workbench. Usually, you will have data in a more traditional (non-linked data) model. Typically there will be an API that you can poll or maybe the source system will notify you of changes using messages. No matter if the interface is pull-driven or push-driven, the data will be format using JSON, XML, CSV or similar. Now, let's assume that on the input side we have a [JSON message](./data/message.json) that is pushed into the workbench pipeline. We need to turn this non-linked data into linked-data. To accomplish this we can attach a JSON-LD context to the message. To do so, we need to use a `JsonToLdAdapter` in the `LdioHttpIn` component and configure it with our context (which we can inline). We end up with the resulting [pipeline definition](./workbench/definitions/pipeline.yml).
 
@@ -123,13 +123,13 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/ap
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 # define the pipeline
-curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./workbench/definitions/pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/park-n-ride-pipeline.yml
 
 # send the message
 curl -X POST -H "Content-Type: application/json" "http://localhost:9004/park-n-ride-pipeline" -d "@./data/message.json"
 ```
 
-> **Note** that we send the definitions to `http://localhost:9003/ldes` because we have defined `server.servlet.context-path: /ldes`.
+> **Note** that we send the definitions to `http://localhost:9003/ldes` because we have defined `LDESSERVER_HOSTNAME: /ldes` in the Docker compose file.
 
 > **Note** that we send a JSON message now and therefore specify a header `Content-Type: application/json`.
 

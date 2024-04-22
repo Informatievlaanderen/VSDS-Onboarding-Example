@@ -21,4 +21,4 @@ outputs:
     config:
       endpoint: http://ldes-server/ldes/occupancy
       rdf-writer:
-        content-type: application/n-quads
+        content-type: application/n-triples

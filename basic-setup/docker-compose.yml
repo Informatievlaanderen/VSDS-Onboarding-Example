@@ -14,7 +14,7 @@ services:
 
   ldes-server:
     container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.13.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.14.0-SNAPSHOT
     environment:
       - SERVER_SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes
@@ -28,11 +28,11 @@ services:
     depends_on:
       - ldes-mongodb
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
 
   ldio-workbench:
     container_name: basic-setup_ldio-workbench
-    image: ldes/ldi-orchestrator:2.4.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -40,4 +40,4 @@ services:
     networks:
       - basic-setup 
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server-workbench:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench/actuator/health"]

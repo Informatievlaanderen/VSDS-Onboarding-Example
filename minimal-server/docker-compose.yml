@@ -6,7 +6,11 @@ services:
 
   ldes-server:
     container_name: minimal-server_ldes-server
-    image: ldes/ldes-server:2.13.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/minimal-server
+      - LDESSERVER_HOSTNAME=http://localhost:9003
+      - SIS_DATA=/tmp
     volumes:
       - ./config/application.yml:/application.yml:ro
     ports:

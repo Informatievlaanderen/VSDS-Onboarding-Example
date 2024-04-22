@@ -1,4 +1,6 @@
 # Consuming a Public LDES
+> **UPDATED** this tutorial has been changed to define the publish pipeline dynamically. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/public-ldes).
+
 This tutorial will show you how to consume an existing public [Linked Data Event Stream (LDES)](https://semiceu.github.io/LinkedDataEventStreams/) using a simple pipeline in the [LDIO Workbench](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) and sending the LDES members to a custom backend system for further processing or querying.
 
 Please see the [introduction](../README.md) for the pre-requisites, as well as an overview of all examples.
@@ -14,54 +16,57 @@ So, the minimal pipeline that you need is a LDES Client plus one of the supporte
 
 In fact, the pipeline configuration is the only thing we need in addition to a docker compose file! So, how does our docker compose file look like? Well, it is as simple as this for the workbench part:
 ```yaml
-workbench:
-  container_name: public-ldes_workbench
-  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
-  volumes:
-    - ./workbench/application.yml:/ldio/application.yml:ro
-  networks:
-    - public-ldes-network 
-  profiles:
-    - delay-started
-  environment:
-    - LDES_SERVER_URL=https://brugge-ldes.geomobility.eu/observations/by-page
+  ldio-workbench:
+    container_name: public-ldes_ldio-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    volumes:
+      - ./application.yml:/ldio/application.yml:ro
+    ports:
+      - 9006:80
+    networks:
+      - public-ldes 
+    depends_on:
+      - sink-system
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench/actuator/health"]
 ```
-> **Note** that we defined a environment variable to specify our exiting, public LDES view but we could have put in the workbench pipeline definition as well. Also note that we start the workbench later to ensure our backend systems are ready to accept the members.
+> **Note** that we included a health check for our workbench so we can verify when it is initialized and ready. We put it in the same network as our sink system and add a dependancy to ensure the sink system is fully available to accept the LDES members. We also expose the workbench using port mapping because we need to provide it with a LDES Client pipeline.
 
-Your backend systems will typically already exist but for this tutorial we use a simple message sink backed by a database, as you can see in the [docker compose](./docker-compose.yml) file.
+Your backend systems will typically already exist but for this tutorial we use a simple message sink backed by a database, as you can see in the [docker compose](./docker-compose.yml#L28) file.
 
 What about the pipeline? It is trivial as well:
 ```yaml
-- name: client-pipeline
-  description: "Replicates & synchronizes an existing LDES view and sends each member to a sink"
-  input:
-    name: Ldio:LdesClient
+# This is a pipeline for demonstrating how to setup a pipeline to follow a publicly available LDES as a Data Client
+name: client-pipeline
+description: "Replicates & synchronizes a LDES view and sends each member to a sink"
+input:
+  name: Ldio:LdesClient
+  config:
+    urls: 
+      - https://brugge-ldes.geomobility.eu/observations/by-page
+    sourceFormat: application/n-triples
+outputs:
+  - name: Ldio:HttpOut
     config:
-      urls: 
-        - ${LDES_SERVER_URL}
-      sourceFormat: application/n-triples
-  outputs:
-    - name: Ldio:HttpOut
-      config:
-        endpoint: http://sink/member
+      endpoint: http://sink-system/member
 ```
-> **Note** that we only specify the LDES url (by means of an environment in the docker compose file), request the LDES fragments using [N-Triples](https://en.wikipedia.org/wiki/N-Triples) which allows for fast parsing and we send the members as-is to the sink using HTTP. That's all folks!
+> **Note** that we only specify the LDES url, request the LDES fragments using [N-Triples](https://en.wikipedia.org/wiki/N-Triples) which allows for faster parsing than the default Turtle (text/turtle) format and we send the members as-is to the sink using HTTP. That's all folks!
 
 ## Ready, Set, Action!
 To see our setup in action, you can use the following:
 ```bash
 clear
 
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=sink$") 2> /dev/null | grep 'Sink listening at http://0.0.0.0:80' ; do sleep 1; done
+# start all system and wait until available
+docker compose up -d --wait
 
-docker compose up workbench -d
-while ! docker logs $(docker ps -q -f "name=workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# start the client pipeline
+curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./pipeline.yml
 ```
 
 You can follow the number of members being replicated using:
 ```bash
-while true; do curl http://localhost:9006; printf "\r"; sleep 1; done
+while true; do curl http://localhost:9007; echo ""; sleep 2; done
 ```
 > Press `CTRL-C` to stop following the count.
 
@@ -69,23 +74,22 @@ while true; do curl http://localhost:9006; printf "\r"; sleep 1; done
 
 You can see the (first couple of) available members using:
 ```bash
-curl http://localhost:9006/member
+curl http://localhost:9007/member
 ```
 
-If you open the above link (http://localhost:9006/member) in a browser you can click on a member to see the content.
+If you open the above link (http://localhost:9007/member) in a browser you can click on a member to see the content.
 > **Note** that the result is in [Turtle](https://www.w3.org/TR/turtle/) format as we did not specify a `rdf-writer` in the `LdioHttpOut` configuration with a different RDF serialization format. E. g. if we wanted N-Triples we can add change the configuration to:
 ```yaml
 outputs:
-- name: Ldio:HttpOut
-  config:
-    endpoint: http://sink/member
-    rdf-writer:
-      content-type: application/n-triples
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://sink-system/member
+      rdf-writer:
+        content-type: application/n-triples
 ```
 
 ## So Long, Folks
 You can wait until the full LDES is replicated and than bring all systems down or you can interrupt the LDES client earlier using:
 ```bash
-docker compose rm workbench --stop --force --volumes
 docker compose down
 ```

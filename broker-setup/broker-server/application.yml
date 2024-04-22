@@ -23,3 +23,7 @@ springdoc:
   swagger-ui:
     path: /admin/doc/v1/swagger
     urlsPrimaryName: base
+
+management:
+  tracing:
+    enabled: false

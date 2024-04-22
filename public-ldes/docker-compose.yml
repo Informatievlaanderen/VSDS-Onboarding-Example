@@ -1,47 +1,48 @@
-version: '2.0'
-
 networks:
-  public-ldes-network:
-    name: public-ldes_network
+  public-ldes:
+    name: public-ldes-network
 
 services:
 
   ### -- Data Client --
 
-  workbench:
-    container_name: public-ldes_workbench
-    image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
+  ldio-workbench:
+    container_name: public-ldes_ldio-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
     volumes:
-      - ./workbench/application.yml:/ldio/application.yml:ro
-    networks:
-      - public-ldes-network 
-    profiles:
-      - delay-started
-    environment:
-      - LDES_SERVER_URL=https://brugge-ldes.geomobility.eu/observations/by-page
-
-  ### -- Backend System --
-
-  sink:
-    container_name: public-ldes_sink
-    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+      - ./application.yml:/ldio/application.yml:ro
     ports:
       - 9006:80
     networks:
-      - public-ldes-network
+      - public-ldes 
     depends_on:
-      - database
+      - sink-system
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench/actuator/health"]
+
+
+  ### -- Backend System --
+
+  sink-system:
+    container_name: public-ldes_sink-system
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9007:80
+    networks:
+      - public-ldes
+    depends_on:
+      - sink-database
     environment:
       - MEMBER_TYPE=https://implementatie.data.vlaanderen.be/ns/vsds-verkeersmetingen#Verkeerstelling
-      - CONNECTION_URI=mongodb://database
+      - CONNECTION_URI=mongodb://sink-database
       - DATABASE_NAME=public-ldes
       - COLLECTION_NAME=traffic-counts
 
-  database:
-    container_name: public-ldes_database
+  sink-database:
+    container_name: public-ldes_sink-database
     image: mongo:latest
     ports:
       - 27017:27017
     networks:
-      - public-ldes-network
+      - public-ldes
   

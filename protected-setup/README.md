@@ -1,4 +1,6 @@
 # Publishing a Protected LDES
+> **UPDATED** this tutorial has been changed to define the publish pipeline dynamically and to add a (test) sink system. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/protected-setup).
+
 This tutorial will show you how to protect a LDES in order to prevent unauthorized access to a proprietary (or a public) data collection. It will also show how to expose the available LDES Server API as well as add and expose some metadata (using DCAT). In addition it will show you how to access such a protected LDES.
 
 Please see the [introduction](../README.md) for the example data set and pre-requisites, as well as an overview of all examples.
@@ -19,65 +21,89 @@ But first, let us setup the system without access limitation first to ensure eve
 At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
 
 ```yaml
-ldes-mongodb:
-  container_name: protected-setup_ldes-mongodb
-  image: mongo:latest
-  ports:
-    - 27017:27017
-  networks:
-    - protected-setup
+  ldes-mongodb:
+    container_name: protected-setup-server_ldes-mongodb
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    networks:
+      - protected-setup-server
 
-ldes-server:
-  container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
-  volumes:
-    - ./ldes-server/application.yml:/application.yml:ro
-  ports:
-    - 9003:80
-  networks:
-    - protected-setup
-  depends_on:
-    - ldes-mongodb
-  environment:
-    - MANAGEMENT_TRACING_ENABLED=false # TODO: remove this when pull-based tracing implemented
-    - LDES_SERVER_HOST_NAME=${LDES_SERVER_HOST_NAME:-http://localhost:9003/ldes}
 
-server-workbench:
-  container_name: protected-setup_server-workbench
-  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
-  volumes:
-    - ./server-workbench/config:/ldio/config:ro
-    - ./server-workbench/application.yml:/ldio/application.yml:ro
-  ports:
-    - 9004:80
-  networks:
-    - protected-setup 
-  profiles:
-    - delay-started
+  ldes-server:
+    container_name: protected-setup-server_ldes-server
+    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    volumes:
+      - ./ldes-server/application.yml:/application.yml:ro
+    ports:
+      - 9003:80
+    networks:
+      - protected-setup-server
+    depends_on:
+      - ldes-mongodb
+    environment:
+    - SIS_DATA=/tmp
+    - SERVER_SERVLET_CONTEXTPATH=/ldes
+    - LDESSERVER_HOSTNAME=${LDESSERVER_HOSTNAME:-http://localhost:9003/ldes}
+    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
+
+
+  server-workbench:
+    container_name: protected-setup-server_server-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    volumes:
+      - ./server-workbench/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9004:80
+    networks:
+      - protected-setup-server 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
+    depends_on:
+      - ldes-server
 ```
 
 > **Notes**:
 > * for clarity we renamed the network as well as the container names
 > * we also renamed the workbench in order to stress that this is the workbench which feeds the LDES Server
 > * we moved the configuration files to organize the setup a bit
-> * we added an environment variable `LDES_SERVER_HOST_NAME` to allow changing the `ldes-server.host-name` in the [server configuration](./ldes-server/application.yml) easier
+> * we added an environment variable `LDESSERVER_HOSTNAME` to allow changing the LDES Server hostname
 
-At the Data Client side we only need a workbench (`client-workbench`) which we can borrow from the [minimal client docker compose](../minimal-client/docker-compose.yml) file:
+At the Data Client side we only need a workbench (`client-workbench`) which we can borrow from the [minimal client docker compose](../minimal-client/docker-compose.yml) file and a sink system (for which we can use a [Test Message Sink](https://github.com/Informatievlaanderen/VSDS-LDES-E2E-message-sink)):
 
 ```yaml
-client-workbench:
-  container_name: protected-setup_client-workbench
-  image: ldes/ldi-orchestrator:2.0.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
-  environment:
-    - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-    - SINK_URL=${SINK_URL}
-    - RATE_LIMIT_MAX=50
-    - RATE_LIMIT_PERIOD=PT1M
-  volumes:
-    - ./client-workbench/application.yml:/ldio/application.yml:ro
-  network_mode: "host"
-  profiles:
-    - delay-started
+  client-workbench:
+    container_name: protected-setup-server_client-workbench
+    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    environment:
+      - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
+      - SINK_URL=http://localhost:9006/member
+      - RATE_LIMIT_MAX=50
+      - RATE_LIMIT_PERIOD=PT1S
+    volumes:
+      - ./client-workbench/application.yml:/ldio/application.yml:ro
+    network_mode: "host"
+    profiles:
+      - delay-started
+    depends_on:
+      - reverse-proxy
+      - client-sink
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
+
+
+  sink-system:
+    container_name: protected-setup-server_sink-system
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9006:80
+    networks:
+      - protected-setup-client
+    environment:
+      - MEMORY=true
+      - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot
 ```
 
 > **Notes**
@@ -85,38 +111,35 @@ client-workbench:
 > * we moved the configuration files
 > * we added a profile to prevent the client workbench to start ahead of time
 
-> **Note** that the client workbench uses the network of the host which is completely disconnected from the internal docker network used by the LDES Server and its database and workbench. The LDES Client component therefore needs to use the host name (`localhost`) and exposed server port (`9003`) to access the LDES. That is why we have configured both the `LDES_SERVER_HOST_NAME` and the `LDES_SERVER_URL` to start with `http://localhost:9003/`.
+> **Note** that the client workbench uses the network of the host which is completely disconnected from the internal docker network used by the LDES Server and its database and workbench. The LDES Client component therefore needs to use the host name (`localhost`) and exposed server port (`9003`) to access the LDES. That is why we have configured both the `LDESSERVER_HOSTNAME` and the `LDES_SERVER_URL` to start with `http://localhost:9003/`.
 
 What we have now is illustrated in the following system container diagram:
 ![container diagram](./uml/unprotected-container.png)
 
 Fig. 1 - Unprotected setup
 
-At this point we can run all the systems and verify that we receive the LDES members in the sink. Please open https://webhook.site/ in a browser windows and copy your unique URL. Copy the `.env` file to `user.env` and fill in your unique URL as the sink URL. Now start all systems using (in a bash shell):
+At this point we can run all the systems and verify that we receive the LDES members in the sink. Start all systems using (in a bash shell):
 ```bash
 clear
 
 # start and wait for the server and database systems
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+docker compose up -d --wait
 
 # define the LDES and the view
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./ldes-server/definitions/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./ldes-server/definitions/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
-# start and wait for the server workbench
-docker compose up server-workbench -d
-while ! docker logs $(docker ps -q -f "name=server-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# start the publish and client pipelines
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/publish-pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./definitions/client-pipeline.yml
 
-# start and wait for the client workbench
-docker compose --env-file user.env up client-workbench -d
-while ! docker logs $(docker ps -q -f "name=client-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# check the sink system
+while true; do curl http://localhost:9007; echo ""; sleep 15; done
 ```
+Press `CTRL-C` to stop following the member count in the sink system.
 
-Once you have verified that the members appear in the sink you can shutdown the systems and remove the private network for now using:
+Once you have verified that the members appear in the sink (this may take a couple of minutes) you can shutdown the systems and remove the private network for now using:
 ```bash
-docker compose rm client-workbench --stop --force --volumes
-docker compose rm server-workbench --stop --force --volumes
 docker compose down
 ```
 
@@ -131,7 +154,7 @@ The following illustration shows the setup after adding such a reverse proxy:
 
 Fig. 2 - Protected setup
 
-The first thing we need to asks ourselves is which endpoints we need to protect but before we can answer that question we need to know what endpoints are available. By default, the LDES Server does not make that immediately apparant but by exposing the so called [Swagger UI](https://swagger.io) we can make the available API visible. If we add the following to the server configuration and launch it, we should see it:
+The first thing we need to asks ourselves is which endpoints we need to protect but before we can answer that question we need to know what endpoints are available. By default, the LDES Server does not make that immediately apparant but by exposing the so called [Swagger UI](https://swagger.io) we can make the available API visible. If we uncomment the following in the server configuration, we should see it (after re-launching the LDES Server):
 ```yaml
 springdoc:
   swagger-ui:
@@ -144,8 +167,7 @@ springdoc:
 The `path` allows us to define the endpoint where the API information is visualized and the `urlsPrimaryName` allows us to choose which collection of APIs are displayed by default when we browse to the swagger UI endpoint. Now, in order to see it, we need to launch the server again:
 ```bash
 clear
-docker compose up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+docker compose up -d --wait
 ```
 
 Once started point your browser to http://localhost:9003/ldes/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/ldes/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the base API displayed in the main window.
@@ -158,16 +180,16 @@ Now, if we switch to the admin API (select `admin` in the top right dropdown) we
 
 > **Note** that an API key is not a very secure way of protecting an API. If somebody gets a hold of it, it can be misused. Therefore you should keep it a secret and use HTTPS instead of HTTP communication to prevent somebody sniffing the network and gaining access to the API key.
 
-Currently we do not expose any metadata for our LDES. Without going into details of DCAT, we will simply add the metadata ([catalog](./ldes-server/metadata/catalog.ttl), [LDES metadata](./ldes-server/metadata/occupancy.ttl) and [view metadata](./ldes-server/metadata/occupancy.by-page.ttl)) to our LDES Server by means of the admin API. We have kept the DCAT itself to the bare minimum as that is beyond the scope of the tutorial. It will be sufficient for our purpose. To try this please run:
+Currently we do not expose any metadata for our LDES. Without going into details of DCAT, we will simply add the metadata ([catalog](./definitions/metadata/catalog.ttl), [LDES metadata](./definitions/metadata/occupancy.ttl) and [view metadata](./definitions/metadata/occupancy.by-page.ttl)) to our LDES Server by means of the admin API. We have kept the DCAT itself to the bare minimum as that is beyond the scope of the tutorial. It will be sufficient for our purpose. To try this please run:
 ```bash
 # upload LDES & view definitions
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./ldes-server/definitions/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./ldes-server/definitions/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 # upload metadata definitions
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/dcat" -d "@./ldes-server/metadata/catalog.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/dcat" -d "@./ldes-server/metadata/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./ldes-server/metadata/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/dcat" -d "@./definitions/metadata/catalog.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/dcat" -d "@./definitions/metadata/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 ```
 
 Now you can get the full DCAT if you request the root http://localhost:9003/ldes. It is a mix of the metadata definitions which we uploaded and server generated data, resulting in something like this:
@@ -217,11 +239,11 @@ tree:specification  rdf:type  terms:Standard .
 As said before, we want this metadata to be publicly available, while limiting access to the admin API only to ourselves and the LDES & the view to a couple of well-known clients, all by means of a unique API key. You can create these keys using one of the free online GUID generators (e.g. https://www.uuidgenerator.net/guid) or a password generator (e.g. https://www.avast.com/random-password-generator), etc.
 
 ### Add a Reverse Proxy
-First we need to add the reverse proxy service to the docker compose file:
+First we need to uncomment the reverse proxy service in the docker compose file:
 ```yaml
 reverse-proxy:
   image: nginx:stable
-  container_name: protected-setup_reverse-proxy
+  container_name: protected-setup-server_reverse-proxy
   ports:
     - 9005:8080
   volumes:
@@ -229,7 +251,7 @@ reverse-proxy:
   depends_on:
     - ldes-server
   networks:
-    - protected-setup 
+    - protected-setup-server 
 ```
 Here we chose a well-known freely available component that we can setup as a reverse proxy. There are many options out there open-source and commercial. The configuration is highly dependent on the component that you use but the principles are mostly the same: you allow or disallow access to some URL for some HTTP verbs (GET, HEAD, POST, etc) based on some conditions.
 
@@ -301,7 +323,7 @@ All calls should fail with a forbidden (HTTP 403).
 
 One final thing to test is if we can POST to the admin endpoint, e.g. to define a LDES or add metadata.
 ```bash
-curl -X POST -d "@./ldes-server/metadata/catalog.ttl" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/dcat" -H "x-api-key: admin-secret"
+curl -X POST -d "@./definitions/metadata/catalog.ttl" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/dcat" -H "x-api-key: admin-secret"
 ```
 Should return an error similar to `Resource of type: dcat-catalog with id: c403cbbd-9e4d-47a2-8bb5-41a7642701ba already exists.` because we have already defined the catalog. But, this is great news because this means the reverse proxy let the request go through and the LDES Server returns an error response.
 
@@ -310,40 +332,26 @@ Now that everything is working great we can simply remove (or comment out) the p
 ```yaml
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.10.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
+  image: ldes/ldes-server:2.14.0-SNAPSHOT
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:
   #   - 9003:80
-  networks:
-    - protected-setup
-  depends_on:
-    - ldes-mongodb
-  environment:
-    - MANAGEMENT_TRACING_ENABLED=false # TODO: remove this when pull-based tracing implemented
-    - LDES_SERVER_HOST_NAME=${LDES_SERVER_HOST_NAME:-http://localhost:9003/ldes}
+  ...
 ```
 
 ### Access the LDES Server Through the Reverse Proxy
-Once the LDES Server is not directly accessible anymore, we need to define some environment variables to use the reverse proxy instead:
-```
-LDES_SERVER_HOST_NAME=http://localhost:9005/feed
-LDES_SERVER_URL=http://localhost:9005/feed/occupancy
-```
-and we need to pass our `user.env` file to all our docker compose commands.
-
-Of course, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes. In the client workbench we need to change the LDES CLient component configuration to include this API key:
+Once the LDES Server is not directly accessible anymore, we need to change the `LDESSERVER_HOSTNAME` environment variable to `http://localhost:9005/feed` to use the reverse proxy instead. We also need to change the LDES Client configuration to use a new URL (`http://localhost:9005/feed/occupancy`). Finally, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes:
 ```yaml
-input:
   name: Ldio:LdesClient
   config:
     urls: 
-      - ${LDES_SERVER_URL}
-    sourceFormat: application/n-quads
+      - http://localhost:9005/feed/occupancy
     auth:
       type: API_KEY
       api-key-header: x-api-key
       api-key: client-two-secret
+    ...
 ```
 
 Show time! But first bring down all systems so we can start with a clean slate:
@@ -357,26 +365,31 @@ To launch all the systems and configure it all you can run the following:
 clear
 
 # start and wait for the server and database systems
-docker compose --env-file user.env up -d
-while ! docker logs $(docker ps -q -f "name=ldes-server$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+LDESSERVER_HOSTNAME=http://localhost:9005/feed && docker compose up -d --wait
 
-# upload LDES & view definitions
-curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams" -d "@./ldes-server/definitions/occupancy.ttl"
-curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views" -d "@./ldes-server/definitions/occupancy.by-page.ttl"
+# define the LDES and the view
+curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 # upload metadata definitions
-curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/dcat" -d "@./ldes-server/metadata/catalog.ttl"
-curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/dcat" -d "@./ldes-server/metadata/occupancy.ttl"
-curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./ldes-server/metadata/occupancy.by-page.ttl"
+curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/dcat" -d "@./definitions/metadata/catalog.ttl"
+curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/dcat" -d "@./definitions/metadata/occupancy.ttl"
+curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 
-# start and wait for the server workbench
-docker compose --env-file user.env up server-workbench -d
-while ! docker logs $(docker ps -q -f "name=server-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# start the publish and client pipelines
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/publish-pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./definitions/protected-client-pipeline.yml
 
-# start and wait for the client workbench
-docker compose --env-file user.env up client-workbench -d
-while ! docker logs $(docker ps -q -f "name=client-workbench$") 2> /dev/null | grep 'Started Application in' ; do sleep 1; done
+# check the sink system
+while true; do curl http://localhost:9007; echo ""; sleep 15; done
 ```
+> **Note** that we:
+> * define `LDESSERVER_HOSTNAME` before launching the systems,
+> * use the admin endpoint (`http://localhost:9005/admin`) for sending LDES and metadata definitions,
+> * provide our admin x-api-key for these requests, and
+> * use a different pipeline (`protected-client-pipeline`).
+
+Press `CTRL-C` to stop following the member count in the sink system.
 
 It all goes well (and it should!) you will see the LDES members appear in the sink.
 
@@ -385,7 +398,5 @@ We have shown you how to enable the swagger UI, how to provide metadata for your
 
 Now that you have verified that the members appear in the sink you can shutdown the systems and remove the private network using:
 ```bash
-docker compose rm client-workbench --stop --force --volumes
-docker compose rm server-workbench --stop --force --volumes
 docker compose down
 ```

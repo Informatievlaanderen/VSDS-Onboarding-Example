@@ -32,4 +32,4 @@ orchestrator:
           config:
             endpoint: http://publisher-server/ldes/occupancy
             rdf-writer:
-              content-type: application/n-quads
+              content-type: application/rdf+protobuf

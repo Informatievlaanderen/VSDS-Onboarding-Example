@@ -1,0 +1,14 @@
+name: client-pipeline
+description: "Requests all existing members from a public LDES server and keeps following it for changes, sending each member as-is to a sink system"
+input:
+  name: Ldio:LdesClient
+  config:
+    urls: 
+      - http://localhost:9003/ldes/occupancy/by-page
+    sourceFormat: application/n-triples
+    materialisation:
+      enabled: false
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://localhost:9007/member

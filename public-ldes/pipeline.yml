@@ -1,0 +1,13 @@
+# This is a pipeline for demonstrating how to setup a pipeline to follow a publicly available LDES as a Data Client
+name: client-pipeline
+description: "Replicates & synchronizes a LDES view and sends each member to a sink"
+input:
+  name: Ldio:LdesClient
+  config:
+    urls: 
+      - https://brugge-ldes.geomobility.eu/observations/by-page
+    sourceFormat: application/n-triples
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://sink-system/member
