@@ -1,0 +1,113 @@
+name: publish-pipeline
+description: "Polls for CSV park-and-ride data, converts to linked data, creates versions & sends to LDES server."
+input:
+  name: Ldio:HttpInPoller
+  config:
+    url: https://data.stad.gent/api/explore/v2.1/catalog/datasets/real-time-bezetting-pr-gent/exports/csv?lang=en&timezone=Europe%2FBrussels
+    cron: 0 */2 * * * *
+  adapter:
+    name: Ldio:RmlAdapter
+    config:
+      mapping: |
+        @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+        @prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
+        @prefix rr:     <http://www.w3.org/ns/r2rml#> .
+        @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+        @prefix carml:  <http://carml.taxonic.com/carml/> .
+        @prefix :       <https://example.org/ns/tutorial/advanced-conversion#> .
+        @prefix mv:     <http://schema.mobivoc.org/#> .
+        @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+        @prefix temp:   <https://temp.org/ns/advanced-compose#> .
+        :TriplesMap a rr:TriplesMap;
+          rml:logicalSource [
+            a rml:LogicalSource;
+            rml:source [ a carml:Stream ];
+            rml:referenceFormulation ql:CSV
+          ];
+          rr:subjectMap [
+            rr:graphMap [ rr:template "{urllinkaddress}" ];
+            rml:reference "urllinkaddress";
+            rr:class mv:ParkingLot
+          ];
+          rr:predicateObjectMap [
+            rr:predicate temp:name;
+            rr:objectMap [ rml:reference "name" ]
+          ],[
+            rr:predicate temp:lastupdate;
+            rr:objectMap [ rml:reference "lastupdate"; rr:datatype xsd:dateTime ]
+          ], [
+            rr:predicate temp:openingtimesdescription;
+            rr:objectMap [ rml:reference "openingtimesdescription" ]
+          ], [
+            rr:predicate temp:operatorinformation;
+            rr:objectMap [ rml:reference "operatorinformation" ]
+          ], [
+            rr:predicate temp:freeparking;
+            rr:objectMap [ rml:reference "freeparking"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:numberofspaces;
+            rr:objectMap [ rml:reference "numberofspaces"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:availablespaces;
+            rr:objectMap [ rml:reference "availablespaces"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:occupation;
+            rr:objectMap [ rml:reference "occupation"; rr:datatype xsd:integer ]
+          ], [
+            rr:predicate temp:latitude;
+            rr:objectMap [ rml:reference "latitude"; rr:datatype xsd:double ]
+          ], [
+            rr:predicate temp:longitude;
+            rr:objectMap [ rml:reference "longitude"; rr:datatype xsd:double ]
+          ].
+transformers:
+  - name: Ldio:SparqlConstructTransformer
+    config:
+      query: |
+        PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX dct:     <http://purl.org/dc/terms/>
+        PREFIX schema:  <http://schema.org/>
+        PREFIX mv:      <http://schema.mobivoc.org/#>
+        PREFIX temp:    <https://temp.org/ns/advanced-compose#>
+        PREFIX geo:     <http://www.w3.org/2003/01/geo/wgs84_pos#>
+        CONSTRUCT {
+          ?id 
+            a mv:ParkingLot ;
+            dct:modified ?lastupdate ;
+            rdfs:label ?name ;
+            schema:openingHoursSpecification [a schema:OpeningHoursSpecification; rdfs:label ?openingtimesdescription] ;
+            mv:operatedBy [a schema:Organization, dct:Agent; rdfs:label ?operatorinformation] ;
+            mv:price [a schema:PriceSpecification; mv:freeOfCharge ?freeparking ] ;
+            mv:url ?id ;
+            mv:capacity [a mv:Capacity; mv:totalCapacity ?numberofspaces] ;
+            mv:capacity [a mv:RealTimeCapacity; mv:currentValue ?availablespaces] ;
+            mv:rateOfOccupancy ?occupation ;
+            geo:lat ?latitude ;
+            geo:long ?longitude .
+        } WHERE {
+          ?id rdf:type mv:ParkingLot .
+          ?id temp:lastupdate ?lastupdate .
+          optional { ?id temp:name ?name . }
+          optional { ?id temp:openingtimesdescription ?openingtimesdescription . }
+          optional { ?id temp:operatorinformation ?operatorinformation . }
+          optional { ?id temp:freeparking ?freeparking . }
+          optional { ?id temp:numberofspaces ?numberofspaces . }
+          optional { ?id temp:availablespaces ?availablespaces . }
+          optional { ?id temp:occupation ?occupation . }
+          optional { ?id temp:latitude ?latitude . }
+          optional { ?id temp:longitude ?longitude . }
+        }
+  - name: Ldio:VersionObjectCreator
+    config:
+      member-type: http://schema.mobivoc.org/#ParkingLot
+      delimiter: "#"
+      date-observed-property: <http://purl.org/dc/terms/modified>
+      generatedAt-property: http://purl.org/dc/terms/modified
+      versionOf-property: http://purl.org/dc/terms/isVersionOf
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://ldes-server/ldes/occupancy
+      rdf-writer:
+        content-type: application/n-triples

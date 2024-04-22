@@ -1,0 +1,18 @@
+name: protected-client-pipeline
+description: "Requests all existing members from a protected LDES server and keeps following it for changes, sending each member as-is to a sink system"
+input:
+  name: Ldio:LdesClient
+  config:
+    urls: 
+      - http://localhost:9005/feed/occupancy
+    sourceFormat: application/n-triples
+    materialisation:
+      enabled: false
+    auth:
+      type: API_KEY
+      api-key-header: x-api-key
+      api-key: client-two-secret
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://localhost:9007/member
