@@ -1,0 +1,23 @@
+[
+  {
+    "id": "volvo-xc40",
+    "type": "car",
+    "brand": "Volvo",
+    "model": "XC40",
+    "max-speed": 180
+  },
+  {
+    "id": "ferrari-f40",
+    "type": "car",
+    "brand": "Ferrari",
+    "model": "F40",
+    "max-speed": 315
+  },
+  {
+    "id": "reliant-robin",
+    "type": "car",
+    "brand": "Reliant",
+    "model": "Robin",
+    "max-speed": 136
+  }
+]

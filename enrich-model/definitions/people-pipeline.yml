@@ -1,0 +1,38 @@
+name: people-pipeline # endpoint name for accepting our person data
+input:
+  name: Ldio:HttpIn # accept an array of person
+  adapter:
+    name: Ldio:JsonToLdAdapter # convert to linked data
+    config:
+      context: | # add a default vocabulary and indicate that max-speed is an integer
+        {
+          "@context": {
+            "@base": "http://example.com/people/",
+            "@vocab": "http://schema.org/",
+            "id": "@id",
+            "type": "@type",
+            "job-title": "jobTitle",
+            "cars": { 
+              "@context": {"@base": "http://example.com/cars/"},
+              "@id": "hasCar", 
+              "@type": "@id"
+            }
+          }
+        }
+transformers:
+  - name: Ldio:SparqlConstructTransformer # enrich person with the details of the owned cars
+    config:
+      query: |
+        PREFIX schema: <http://schema.org/>
+        CONSTRUCT {
+          ?cs ?cp ?co .
+        }
+        WHERE { 
+          ?ps schema:hasCar ?cs .
+          SERVICE <http://graph-database:8080/rdf4j-server/repositories/cars> { ?cs ?cp ?co . }
+        }
+      infer: true
+outputs:
+  - name: Ldio:HttpOut # send to our sink system
+    config:
+      endpoint: http://sink-system/member
