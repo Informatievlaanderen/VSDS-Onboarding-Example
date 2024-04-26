@@ -1,7 +1,0 @@
-@prefix schema: <http://schema.org/> .
-
-<http://example.com/people/SpideyBoy>
-  a schema:Person ;
-  schema:name "Peter Parker" ;
-  schema:jobTitle "Spidey Boy" ;
-  schema:hasCar <http://example.com/cars/Ferrari/F40>, <http://example.com/cars/Volvo/XC40> .

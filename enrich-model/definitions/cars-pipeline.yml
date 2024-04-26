@@ -1,22 +1,23 @@
-name: cars-pipeline
+name: cars-pipeline # endpoint name for accepting our car models
 input:
-  name: Ldio:HttpIn
+  name: Ldio:HttpIn # accept an array of car models
   adapter:
-    name: Ldio:RdfAdapter
-transformers:
-  - name: Ldio:SparqlConstructTransformer
+    name: Ldio:JsonToLdAdapter # convert to linked data
     config:
-      query: |
-        PREFIX schema: <http://schema.org/>
-        CONSTRUCT {
-          GRAPH ?car { ?car ?cp ?co . }
-        } WHERE {
-          ?car a schema:Car .
-          ?car ?cp ?co .
+      context: |
+        {
+          "@context": {
+            "@base": "http://example.com/cars/",
+            "@vocab": "http://schema.org/",
+            "id": "@id",
+            "type": "@type",
+            "max-speed": { "@id": "maxSpeed", "@type": "http://www.w3.org/2001/XMLSchema#integer" }
+          }
         }
 outputs:
-  - name: Ldio:RepositoryMaterialiser
+  - name: Ldio:RepositoryMaterialiser # store in our graph database
     config:
       sparql-host: http://graph-database:8080/rdf4j-server
       repository-id: cars
-      batch-size: 3
+      batch-size: 10
+      batch-timeout: 1000

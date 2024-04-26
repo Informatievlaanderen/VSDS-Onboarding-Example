@@ -1,0 +1,10 @@
+{
+  "id": "SpideyBoy",
+  "type": "Person",
+  "name": "Peter Parker",
+  "job-title": "Spidey Boy",
+  "cars": [
+    "ferrari-f40",
+    "volvo-xc40"
+  ]
+}
