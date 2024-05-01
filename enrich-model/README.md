@@ -1,4 +1,4 @@
-# Enrich A Model
+# Enrich a Model
 This tutorial will show you how to use a LDIO workbench to combine two linked data models in a pipeline.
 
 Please see the [introduction](../README.md) for the pre-requisites, as well as an overview of all examples.
