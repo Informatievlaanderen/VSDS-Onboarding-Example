@@ -17,7 +17,7 @@ services:
 
   ldes-server:
     container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./ldes-server/application.yml:/application.yml:ro
     ports:
@@ -37,7 +37,7 @@ services:
 
   server-workbench:
     container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./server-workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -65,7 +65,7 @@ services:
 
   client-workbench:
     container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     environment:
       - LDES_CLIENT_WORKBENCH_PORT=9006
     volumes:

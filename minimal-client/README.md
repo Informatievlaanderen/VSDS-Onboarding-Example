@@ -73,7 +73,7 @@ The [docker compose](./docker-compose.yml) file isn't all that scary either. We 
 ```yaml
   ldio-workbench:
     container_name: basic-client_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./application.yml:/ldio/application.yml:ro
     environment:

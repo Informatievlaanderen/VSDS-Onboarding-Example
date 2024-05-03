@@ -14,7 +14,7 @@ services:
 
   ldes-server:
     container_name: advanced-conversion_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     environment:
       - SIS_DATA=/tmp
       - SERVER_SERVLET_CONTEXTPATH=/ldes
@@ -33,7 +33,7 @@ services:
 
   ldio-workbench:
     container_name: advanced-conversion_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:

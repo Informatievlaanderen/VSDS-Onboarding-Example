@@ -32,7 +32,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
 
   ldes-server:
     container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./ldes-server/application.yml:/application.yml:ro
     ports:
@@ -52,7 +52,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
 
   server-workbench:
     container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./server-workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -76,7 +76,7 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 ```yaml
   client-workbench:
     container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     environment:
       - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
       - SINK_URL=http://localhost:9006/member
@@ -332,7 +332,7 @@ Now that everything is working great we can simply remove (or comment out) the p
 ```yaml
 ldes-server:
   container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.14.0-SNAPSHOT
+  image: ldes/ldes-server:2.14.0
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   # ports:

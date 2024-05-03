@@ -6,7 +6,7 @@ services:
 
   ldes-server:
     container_name: minimal-server_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/minimal-server
       - LDESSERVER_HOSTNAME=http://localhost:9003

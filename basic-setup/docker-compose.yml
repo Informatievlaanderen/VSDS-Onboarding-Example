@@ -14,7 +14,7 @@ services:
 
   ldes-server:
     container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     environment:
       - SERVER_SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes
@@ -32,7 +32,7 @@ services:
 
   ldio-workbench:
     container_name: basic-setup_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:

@@ -39,7 +39,7 @@ The workbench configuration is trivial as well:
 ```yaml
   ldio-workbench:
     container_name: enrich-model_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     environment:
       - SERVER_PORT=80
       - LOGGING_LEVEL_ROOT=INFO

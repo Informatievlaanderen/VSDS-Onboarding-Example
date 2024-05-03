@@ -18,7 +18,7 @@ In fact, the pipeline configuration is the only thing we need in addition to a d
 ```yaml
   ldio-workbench:
     container_name: public-ldes_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./application.yml:/ldio/application.yml:ro
     ports:
