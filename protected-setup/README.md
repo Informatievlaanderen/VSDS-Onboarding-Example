@@ -42,9 +42,9 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
     depends_on:
       - ldes-mongodb
     environment:
+    - LDESSERVER_HOSTNAME=http://${HOSTNAME}:9003/ldes
     - SIS_DATA=/tmp
     - SERVER_SERVLET_CONTEXTPATH=/ldes
-    - LDESSERVER_HOSTNAME=${LDESSERVER_HOSTNAME:-http://localhost:9003/ldes}
     - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
@@ -77,28 +77,25 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
   client-workbench:
     container_name: protected-setup-server_client-workbench
     image: ldes/ldi-orchestrator:2.5.1
-    environment:
-      - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-      - SINK_URL=http://localhost:9006/member
-      - RATE_LIMIT_MAX=50
-      - RATE_LIMIT_PERIOD=PT1S
     volumes:
       - ./client-workbench/application.yml:/ldio/application.yml:ro
-    network_mode: "host"
-    profiles:
-      - delay-started
+    ports:
+      - 9006:80
+    networks:
+      - protected-setup-client
+    extra_hosts:
+      - ldes-server:${HOSTIP}
     depends_on:
-      - reverse-proxy
-      - client-sink
+      - sink-system
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
 
 
   sink-system:
     container_name: protected-setup-server_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
-      - 9006:80
+      - 9007:80
     networks:
       - protected-setup-client
     environment:
@@ -122,7 +119,7 @@ At this point we can run all the systems and verify that we receive the LDES mem
 ```bash
 clear
 
-# start and wait for the server and database systems
+# start and wait for all systems to be available
 docker compose up -d --wait
 
 # define the LDES and the view
@@ -346,7 +343,7 @@ Once the LDES Server is not directly accessible anymore, we need to change the `
   name: Ldio:LdesClient
   config:
     urls: 
-      - http://localhost:9005/feed/occupancy
+      - http://ldes-server:9005/feed/occupancy
     auth:
       type: API_KEY
       api-key-header: x-api-key

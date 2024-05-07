@@ -1,2 +1,0 @@
-server:
-  port: ${LDES_CLIENT_WORKBENCH_PORT}
