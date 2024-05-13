@@ -108,6 +108,6 @@ transformers:
 outputs:
   - name: Ldio:HttpOut
     config:
-      endpoint: http://ldes-server/ldes/occupancy
+      endpoint: http://ldes-server/occupancy
       rdf-writer:
         content-type: application/n-triples

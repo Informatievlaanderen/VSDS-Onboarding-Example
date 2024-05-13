@@ -27,13 +27,15 @@ services:
     depends_on:
       - ldes-mongodb
     environment:
-    - LDESSERVER_HOSTNAME=http://host.docker.internal:9003/ldes
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
     - SIS_DATA=/tmp
-    - SERVER_SERVLET_CONTEXTPATH=/ldes
+    - SERVER_SERVLET_CONTEXTPATH=
     - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/protected-setup
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
-
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
+      interval: 12s
+      timeout: 3s
+      retries: 20
 
   server-workbench:
     container_name: protected-setup-server_server-workbench

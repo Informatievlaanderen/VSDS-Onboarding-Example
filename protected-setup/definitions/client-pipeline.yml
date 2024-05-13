@@ -4,7 +4,7 @@ input:
   name: Ldio:LdesClient
   config:
     urls: 
-      - http://host.docker.internal:9003/ldes/occupancy/by-page
+      - http://host.docker.internal:9003/occupancy/by-page
     sourceFormat: application/n-triples
     materialisation:
       enabled: false

@@ -21,48 +21,50 @@ But first, let us setup the system without access limitation first to ensure eve
 At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
 
 ```yaml
-  ldes-mongodb:
-    container_name: protected-setup-server_ldes-mongodb
-    image: mongo:latest
-    ports:
-      - 27017:27017
-    networks:
-      - protected-setup-server
+ldes-mongodb:
+  container_name: protected-setup-server_ldes-mongodb
+  image: mongo:latest
+  ports:
+    - 27017:27017
+  networks:
+    - protected-setup-server
 
 
-  ldes-server:
-    container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:2.14.0
-    volumes:
-      - ./ldes-server/application.yml:/application.yml:ro
-    ports:
-      - 9003:80
-    networks:
-      - protected-setup-server
-    depends_on:
-      - ldes-mongodb
-    environment:
-    - LDESSERVER_HOSTNAME=http://${HOSTNAME}:9003/ldes
-    - SIS_DATA=/tmp
-    - SERVER_SERVLET_CONTEXTPATH=/ldes
-    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
+ldes-server:
+  container_name: protected-setup-server_ldes-server
+  image: ldes/ldes-server:2.14.0
+  volumes:
+    - ./ldes-server/application.yml:/application.yml:ro
+  ports:
+    - 9003:80
+  networks:
+    - protected-setup-server
+  depends_on:
+    - ldes-mongodb
+  environment:
+  - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
+  - SIS_DATA=/tmp
+  - SERVER_SERVLET_CONTEXTPATH=
+  - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/protected-setup
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
+    interval: 12s
+    timeout: 3s
+    retries: 20
 
-
-  server-workbench:
-    container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./server-workbench/application.yml:/ldio/application.yml:ro
-    ports:
-      - 9004:80
-    networks:
-      - protected-setup-server 
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
-    depends_on:
-      - ldes-server
+server-workbench:
+  container_name: protected-setup-server_server-workbench
+  image: ldes/ldi-orchestrator:2.5.1
+  volumes:
+    - ./server-workbench/application.yml:/ldio/application.yml:ro
+  ports:
+    - 9004:80
+  networks:
+    - protected-setup-server 
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
+  depends_on:
+    - ldes-server
 ```
 
 > **Notes**:
@@ -74,33 +76,35 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
 At the Data Client side we only need a workbench (`client-workbench`) which we can borrow from the [minimal client docker compose](../minimal-client/docker-compose.yml) file and a sink system (for which we can use a [Test Message Sink](https://github.com/Informatievlaanderen/VSDS-LDES-E2E-message-sink)):
 
 ```yaml
-  client-workbench:
-    container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./client-workbench/application.yml:/ldio/application.yml:ro
-    ports:
-      - 9006:80
-    networks:
-      - protected-setup-client
-    extra_hosts:
-      - ldes-server:${HOSTIP}
-    depends_on:
-      - sink-system
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
+client-workbench:
+  container_name: protected-setup-server_client-workbench
+  image: ldes/ldi-orchestrator:2.5.1
+  environment:
+    - SERVER_PORT=80
+  volumes:
+    - ./client-workbench/application.yml:/ldio/application.yml:ro
+  networks:
+    - protected-setup-client
+  ports:
+    - 9006:80
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  depends_on:
+    - sink-system
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
 
 
-  sink-system:
-    container_name: protected-setup-server_sink-system
-    image: ghcr.io/informatievlaanderen/test-message-sink:latest
-    ports:
-      - 9007:80
-    networks:
-      - protected-setup-client
-    environment:
-      - MEMORY=true
-      - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot
+sink-system:
+  container_name: protected-setup-server_sink-system
+  image: ghcr.io/informatievlaanderen/test-message-sink:latest
+  ports:
+    - 9007:80
+  networks:
+    - protected-setup-client
+  environment:
+    - MEMORY=true
+    - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot
 ```
 
 > **Notes**
@@ -123,15 +127,15 @@ clear
 docker compose up -d --wait
 
 # define the LDES and the view
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 # start the publish and client pipelines
-curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/publish-pipeline.yml
-curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./definitions/client-pipeline.yml
+curl -X POST -H "content-type: application/yaml" "http://localhost:9004/admin/api/v1/pipeline" --data-binary "@./definitions/publish-pipeline.yml"
+curl -X POST -H "content-type: application/yaml" "http://localhost:9006/admin/api/v1/pipeline" --data-binary "@./definitions/client-pipeline.yml"
 
 # check the sink system
-while true; do curl http://localhost:9007; echo ""; sleep 15; done
+while true; do curl "http://localhost:9007"; echo ""; sleep 15; done
 ```
 Press `CTRL-C` to stop following the member count in the sink system.
 
@@ -168,7 +172,7 @@ clear
 docker compose -f docker-compose.yml -f expose-swagger.yml up -d --wait
 ```
 
-Once started point your browser to http://localhost:9003/ldes/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/ldes/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the base API displayed in the main window.
+Once started point your browser to http://localhost:9003/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the base API displayed in the main window.
 
 When we look at this base API, we see that there is one endpoint for the ingest that expects a `POST` to an endpoint. Obviously we do not want anybody else than the server workbench to push members to our ingest endpoint so we need to disallow this through the reverse proxy. We can do that by disallowing `POST` requests through the reverse proxy but we need to ensure that we can still seed the LDES definitions, which also use `POST` requests towards the administrative API.
 
@@ -181,57 +185,57 @@ Now, if we switch to the admin API (select `admin` in the top right dropdown) we
 Currently we do not expose any metadata for our LDES. Without going into details of DCAT, we will simply add the metadata ([catalog](./definitions/metadata/catalog.ttl), [LDES metadata](./definitions/metadata/occupancy.ttl) and [view metadata](./definitions/metadata/occupancy.by-page.ttl)) to our LDES Server by means of the admin API. We have kept the DCAT itself to the bare minimum as that is beyond the scope of the tutorial. It will be sufficient for our purpose. To try this please run:
 ```bash
 # upload LDES & view definitions
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams/occupancy/views" -d "@./definitions/occupancy.by-page.ttl"
 
 # upload metadata definitions
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/dcat" -d "@./definitions/metadata/catalog.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/dcat" -d "@./definitions/metadata/occupancy.ttl"
-curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/dcat" -d "@./definitions/metadata/catalog.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams/occupancy/dcat" -d "@./definitions/metadata/occupancy.ttl"
+curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 ```
 
-Now you can get the full DCAT if you request the root http://localhost:9003/ldes. It is a mix of the metadata definitions which we uploaded and server generated data, resulting in something like this:
+Now you can get the full DCAT if you request the root http://localhost:9003. It is a mix of the metadata definitions which we uploaded and server generated data, resulting in something like this:
 ```text
-@prefix by-page:   <http://localhost:9003/ldes/occupancy/by-page/> .
+@prefix by-page:   <http://host.docker.internal:9003/occupancy/by-page/> .
 @prefix dcat:      <http://www.w3.org/ns/dcat#> .
-@prefix ldes:      <http://localhost:9003/ldes/> .
-@prefix occupancy: <http://localhost:9003/ldes/occupancy/> .
+@prefix ldes:      <https://w3id.org/ldes/> .
+@prefix occupancy: <http://host.docker.internal:9003/occupancy/> .
 @prefix rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix terms:     <http://purl.org/dc/terms/> .
 @prefix tree:      <https://w3id.org/tree/> .
 
-ldes:occupancy  rdf:type   dcat:Dataset ;
-        terms:conformsTo   tree:specification , <https://w3id.org/ldes/specification> ;
-        terms:description  "LDES containing the occupancy of the various park+rides in Ghent in real time"@en ;
-        terms:identifier   "http://localhost:9003/ldes/occupancy"^^rdfs:Literal ;
-        terms:title        "Real time occupancy P+R (Gent) as LDES"@en .
-
-<https://w3id.org/ldes/specification>
-        rdf:type  terms:Standard .
-
-occupancy:by-page  rdf:type  rdfs:Resource .
-
-<http://localhost:9003/ldes>
-        rdf:type           dcat:Catalog ;
-        terms:description  "Offers an overview of the dataset(s) and data service(s) needed for the tutorial 'Publishing And Accessing a Protected LDES'."@en ;
-        terms:identifier   "c403cbbd-9e4d-47a2-8bb5-41a7642701ba"^^rdfs:Literal ;
-        terms:title        "Catalog for Publishing And Accessing a Protected LDES"@en ;
-        dcat:dataset       ldes:occupancy ;
+<http://host.docker.internal:9003>
+        rdf:type           dcat:Catalog;
+        terms:description  "Offers an overview of the dataset(s) and data service(s) needed for the tutorial 'Publishing And Accessing a Protected LDES'."@en;
+        terms:identifier   "9aec5b70-570d-47bd-9453-a76a20245543"^^rdfs:Literal;
+        terms:title        "Catalog for Publishing And Accessing a Protected LDES"@en;
+        dcat:dataset       <http://host.docker.internal:9003/occupancy>;
         dcat:service       by-page:description .
-
-by-page:description  rdf:type     dcat:DataService ;
-        terms:description         "Paged view for the occupancy of the various park+rides in Ghent in real time"@en ;
-        terms:identifier          "http://localhost:9003/ldes/occupancy/by-page"^^rdfs:Literal ;
-        terms:title               "Real time occupancy P+R (Gent) by page"@en ;
-        dcat:endpointDescription  <https://semiceu.github.io/LinkedDataEventStreams/> ;
-        dcat:endpointURL          occupancy:by-page ;
-        dcat:servesDataset        ldes:occupancy .
-
-tree:specification  rdf:type  terms:Standard .
 
 <https://semiceu.github.io/LinkedDataEventStreams/>
         rdf:type  rdfs:Resource .
+
+<http://host.docker.internal:9003/occupancy>
+        rdf:type           dcat:Dataset;
+        terms:conformsTo   tree:specification , ldes:specification;
+        terms:description  "LDES containing the occupancy of the various park+rides in Ghent in real time"@en;
+        terms:identifier   "http://host.docker.internal:9003/occupancy"^^rdfs:Literal;
+        terms:title        "Real time occupancy P+R (Gent) as LDES"@en .
+
+tree:specification  rdf:type  terms:Standard .
+
+by-page:description  rdf:type     dcat:DataService;
+        terms:description         "Paged view for the occupancy of the various park+rides in Ghent in real time"@en;
+        terms:identifier          "http://host.docker.internal:9003/occupancy/by-page"^^rdfs:Literal;
+        terms:title               "Real time occupancy P+R (Gent) by page"@en;
+        dcat:endpointDescription  <https://semiceu.github.io/LinkedDataEventStreams/>;
+        dcat:endpointURL          occupancy:by-page;
+        dcat:servesDataset        <http://host.docker.internal:9003/occupancy> .
+
+ldes:specification  rdf:type  terms:Standard .
+
+occupancy:by-page  rdf:type  rdfs:Resource .
 ```
 
 As said before, we want this metadata to be publicly available, while limiting access to the admin API only to ourselves and the LDES & the view to a couple of well-known clients, all by means of a unique API key. You can create these keys using one of the free online GUID generators (e.g. https://www.uuidgenerator.net/guid) or a password generator (e.g. https://www.avast.com/random-password-generator), etc.
@@ -275,14 +279,14 @@ docker compose -f docker-compose.yml -f introduce-proxy.yml up -d --wait
 ```
 
 We have setup the reverse proxy to remap the LDES Server endpoints (all based at `/ldes`) a bit. The reverse proxy serves:
-* the metadata at `/`
+* the metadata at `/ldes`
 * the admin API at `/admin`
 * the LDES, the view and its nodes at `/feed`
 
 If we do not pass an API key we can retrieve only the metadata and not the LDES, the view, the admin API and the swagger UI:
 ```bash
 clear
-curl -I "http://localhost:9005/"
+curl -I "http://localhost:9005/ldes"
 curl -I "http://localhost:9005/feed/occupancy"
 curl -I "http://localhost:9005/feed/occupancy/by-page"
 curl -I "http://localhost:9005/admin/api/v1/eventstreams"
@@ -293,7 +297,7 @@ Public access is only allowed (HTTP 200) for the first call, all other calls are
 If we pass a client API key we can retrieve the metadata, the LDES and the view but we cannot use the admin API:
 ```bash
 clear
-curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/"
+curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/ldes"
 curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/feed/occupancy"
 curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/feed/occupancy/by-page"
 curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/admin/api/v1/eventstreams"
@@ -304,7 +308,7 @@ All but the last call should succeed (HTTP 200) while the last one is forbidden 
 Finally, if we pass the admin API key all calls should be possible:
 ```bash
 clear
-curl -I -H "x-api-key: admin-secret" "http://localhost:9005/"
+curl -I -H "x-api-key: admin-secret" "http://localhost:9005/ldes"
 curl -I -H "x-api-key: admin-secret" "http://localhost:9005/feed/occupancy"
 curl -I -H "x-api-key: admin-secret" "http://localhost:9005/feed/occupancy/by-page"
 curl -I -H "x-api-key: admin-secret" "http://localhost:9005/admin/api/v1/eventstreams"
@@ -314,9 +318,9 @@ Now all calls succeed. Great!
 We need to verify one more rule: nobody (not even an administrator!) should we able to send data to the ingest endpoint of the LDES server:
 ```bash
 clear
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy"
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy" -H "x-api-key: client-one-secret"
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy" -H "x-api-key: admin-secret"
+curl -X POST -i -H "content-type: text/turtle" -d "@./data/member.ttl" "http://localhost:9005/feed/occupancy"
+curl -X POST -i -H "content-type: text/turtle" -d "@./data/member.ttl" "http://localhost:9005/feed/occupancy" -H "x-api-key: client-one-secret"
+curl -X POST -i -H "content-type: text/turtle" -d "@./data/member.ttl" "http://localhost:9005/feed/occupancy" -H "x-api-key: admin-secret"
 ```
 All calls should fail with a forbidden (HTTP 403).
 > **Note** that it would be better to return method not allowed (HTTP 405) but that seems to be a challenge in this specific reverse proxy configuration.
@@ -403,11 +407,11 @@ curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http:/
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 
 # start the publish and client pipelines
-curl -X POST -H "content-type: application/yaml" "http://localhost:9004/admin/api/v1/pipeline" --data-binary @./definitions/publish-pipeline.yml
-curl -X POST -H "content-type: application/yaml" "http://localhost:9006/admin/api/v1/pipeline" --data-binary @./definitions/protected-client-pipeline.yml
+curl -X POST -H "content-type: application/yaml" "http://localhost:9004/admin/api/v1/pipeline" --data-binary "@./definitions/publish-pipeline.yml"
+curl -X POST -H "content-type: application/yaml" "http://localhost:9006/admin/api/v1/pipeline" --data-binary "@./definitions/protected-client-pipeline.yml"
 
 # check the sink system
-while true; do curl http://localhost:9007; echo ""; sleep 15; done
+while true; do curl "http://localhost:9007"; echo ""; sleep 15; done
 ```
 > **Note** that we:
 > * use the admin endpoint (`http://localhost:9005/admin`) for sending LDES and metadata definitions,
