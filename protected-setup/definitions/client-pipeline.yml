@@ -4,11 +4,11 @@ input:
   name: Ldio:LdesClient
   config:
     urls: 
-      - http://localhost:9003/ldes/occupancy/by-page
+      - http://host.docker.internal:9003/ldes/occupancy/by-page
     sourceFormat: application/n-triples
     materialisation:
       enabled: false
 outputs:
   - name: Ldio:HttpOut
     config:
-      endpoint: http://localhost:9007/member
+      endpoint: http://sink-system/member

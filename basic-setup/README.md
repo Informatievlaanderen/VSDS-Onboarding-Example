@@ -35,7 +35,7 @@ After that we add a LDES Server as a service, point it to its configuration file
 ```yaml
   ldes-server:
     container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     environment:
       - SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes

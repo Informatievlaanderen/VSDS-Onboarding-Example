@@ -16,7 +16,7 @@ services:
 
   publisher-workbench:
     container_name: broker-setup_publisher-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./publisher-workbench/config:/ldio/config:ro
       - ./publisher-workbench/application.yml:/ldio/application.yml:ro
@@ -31,7 +31,7 @@ services:
 
   publisher-server:
     container_name: broker-setup_publisher-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
     ports:
@@ -58,7 +58,7 @@ services:
 
   broker-workbench:
     container_name: broker-setup_broker-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./broker-workbench/config:/ldio/config:ro
       - ./broker-workbench/application.yml:/ldio/application.yml:ro
@@ -75,7 +75,7 @@ services:
 
   broker-server:
     container_name: broker-setup_broker-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:

@@ -4,7 +4,7 @@ input:
   name: Ldio:LdesClient
   config:
     urls: 
-      - http://localhost:9005/feed/occupancy
+      - http://host.docker.internal:9005/feed/occupancy
     sourceFormat: application/n-triples
     materialisation:
       enabled: false
@@ -15,4 +15,4 @@ input:
 outputs:
   - name: Ldio:HttpOut
     config:
-      endpoint: http://localhost:9007/member
+      endpoint: http://sink-system/member

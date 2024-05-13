@@ -1,0 +1,5 @@
+services:
+  ldes-server:
+    environment:
+    - SPRINGDOC_SWAGGERUI_PATH=/admin/doc/v1/swagger
+    - SPRINGDOC_SWAGGERUI_URLSPRIMARYNAME=base

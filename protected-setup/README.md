@@ -32,7 +32,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
 
   ldes-server:
     container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./ldes-server/application.yml:/application.yml:ro
     ports:
@@ -42,9 +42,9 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
     depends_on:
       - ldes-mongodb
     environment:
+    - LDESSERVER_HOSTNAME=http://${HOSTNAME}:9003/ldes
     - SIS_DATA=/tmp
     - SERVER_SERVLET_CONTEXTPATH=/ldes
-    - LDESSERVER_HOSTNAME=${LDESSERVER_HOSTNAME:-http://localhost:9003/ldes}
     - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
@@ -52,7 +52,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb
 
   server-workbench:
     container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./server-workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -76,29 +76,26 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 ```yaml
   client-workbench:
     container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
-    environment:
-      - LDES_SERVER_URL=${LDES_SERVER_URL:-http://localhost:9003/ldes/occupancy/by-page}
-      - SINK_URL=http://localhost:9006/member
-      - RATE_LIMIT_MAX=50
-      - RATE_LIMIT_PERIOD=PT1S
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./client-workbench/application.yml:/ldio/application.yml:ro
-    network_mode: "host"
-    profiles:
-      - delay-started
+    ports:
+      - 9006:80
+    networks:
+      - protected-setup-client
+    extra_hosts:
+      - ldes-server:${HOSTIP}
     depends_on:
-      - reverse-proxy
-      - client-sink
+      - sink-system
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
 
 
   sink-system:
     container_name: protected-setup-server_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
-      - 9006:80
+      - 9007:80
     networks:
       - protected-setup-client
     environment:
@@ -122,7 +119,7 @@ At this point we can run all the systems and verify that we receive the LDES mem
 ```bash
 clear
 
-# start and wait for the server and database systems
+# start and wait for all systems to be available
 docker compose up -d --wait
 
 # define the LDES and the view
@@ -154,12 +151,13 @@ The following illustration shows the setup after adding such a reverse proxy:
 
 Fig. 2 - Protected setup
 
-The first thing we need to asks ourselves is which endpoints we need to protect but before we can answer that question we need to know what endpoints are available. By default, the LDES Server does not make that immediately apparant but by exposing the so called [Swagger UI](https://swagger.io) we can make the available API visible. If we uncomment the following in the server configuration, we should see it (after re-launching the LDES Server):
+The first thing we need to asks ourselves is which endpoints we need to protect but before we can answer that question we need to know what endpoints are available. By default, the LDES Server does not make that immediately apparant but by exposing the so called [Swagger UI](https://swagger.io) we can make the available API visible. If we add the following environment variables (in an additional [docker compose](./expose-swagger.yml) file and [merge](https://docs.docker.com/compose/compose-file/13-merge/) them), we should see it (after launching the LDES Server):
 ```yaml
-springdoc:
-  swagger-ui:
-    path: /admin/doc/v1/swagger
-    urlsPrimaryName: base
+services:
+  ldes-server:
+    environment:
+    - SPRINGDOC_SWAGGERUI_PATH=/admin/doc/v1/swagger
+    - SPRINGDOC_SWAGGERUI_URLSPRIMARYNAME=base
 ```
 
 > **Note** that we expose our swagger UI on the 'admin' API so we can protect it together with the rest of the admin API later.
@@ -167,7 +165,7 @@ springdoc:
 The `path` allows us to define the endpoint where the API information is visualized and the `urlsPrimaryName` allows us to choose which collection of APIs are displayed by default when we browse to the swagger UI endpoint. Now, in order to see it, we need to launch the server again:
 ```bash
 clear
-docker compose up -d --wait
+docker compose -f docker-compose.yml -f expose-swagger.yml up -d --wait
 ```
 
 Once started point your browser to http://localhost:9003/ldes/admin/doc/v1/swagger. You will be redirected to http://localhost:9003/ldes/admin/doc/v1/swagger-ui/index.html and in the top right corner you should see the `base` API collection selected and the base API displayed in the main window.
@@ -239,19 +237,21 @@ tree:specification  rdf:type  terms:Standard .
 As said before, we want this metadata to be publicly available, while limiting access to the admin API only to ourselves and the LDES & the view to a couple of well-known clients, all by means of a unique API key. You can create these keys using one of the free online GUID generators (e.g. https://www.uuidgenerator.net/guid) or a password generator (e.g. https://www.avast.com/random-password-generator), etc.
 
 ### Add a Reverse Proxy
-First we need to uncomment the reverse proxy service in the docker compose file:
+First we need to create the reverse proxy service in the additional [docker compose](./introduce-proxy.yml) file (we also included the environment variables to expose the swagger):
 ```yaml
-reverse-proxy:
-  image: nginx:stable
-  container_name: protected-setup-server_reverse-proxy
-  ports:
-    - 9005:8080
-  volumes:
-    - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
-  depends_on:
-    - ldes-server
-  networks:
-    - protected-setup-server 
+services:
+  reverse-proxy:
+    image: nginx:stable
+    container_name: protected-setup-server_reverse-proxy
+    ports:
+      - 9005:8080
+    volumes:
+      - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
+    depends_on:
+      - ldes-server
+    networks:
+      - protected-setup-server 
+
 ```
 Here we chose a well-known freely available component that we can setup as a reverse proxy. There are many options out there open-source and commercial. The configuration is highly dependent on the component that you use but the principles are mostly the same: you allow or disallow access to some URL for some HTTP verbs (GET, HEAD, POST, etc) based on some conditions.
 
@@ -271,7 +271,7 @@ This translates to a mapping for our reverse proxy. Next we define an API key va
 
 For this particular reverse proxy we end up with this [configuration](./reverse-proxy/protect-ldes-server.conf) and can start the reverse proxy to test if the rules allow or disallow access correctly:
 ```bash
-docker compose up reverse-proxy -d
+docker compose -f docker-compose.yml -f introduce-proxy.yml up -d --wait
 ```
 
 We have setup the reverse proxy to remap the LDES Server endpoints (all based at `/ldes`) a bit. The reverse proxy serves:
@@ -282,10 +282,10 @@ We have setup the reverse proxy to remap the LDES Server endpoints (all based at
 If we do not pass an API key we can retrieve only the metadata and not the LDES, the view, the admin API and the swagger UI:
 ```bash
 clear
-curl -I http://localhost:9005/
-curl -I http://localhost:9005/feed/occupancy
-curl -I http://localhost:9005/feed/occupancy/by-page
-curl -I http://localhost:9005/admin/api/v1/eventstreams
+curl -I "http://localhost:9005/"
+curl -I "http://localhost:9005/feed/occupancy"
+curl -I "http://localhost:9005/feed/occupancy/by-page"
+curl -I "http://localhost:9005/admin/api/v1/eventstreams"
 ```
 Public access is only allowed (HTTP 200) for the first call, all other calls are unauthenticated (HTTP 401).
 > **Note** that we pass `-I` in order to only retrieve the headers, not the actual content. 
@@ -293,10 +293,10 @@ Public access is only allowed (HTTP 200) for the first call, all other calls are
 If we pass a client API key we can retrieve the metadata, the LDES and the view but we cannot use the admin API:
 ```bash
 clear
-curl -I -H "x-api-key: client-one-secret" http://localhost:9005/
-curl -I -H "x-api-key: client-one-secret" http://localhost:9005/feed/occupancy
-curl -I -H "x-api-key: client-one-secret" http://localhost:9005/feed/occupancy/by-page
-curl -I -H "x-api-key: client-one-secret" http://localhost:9005/admin/api/v1/eventstreams
+curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/"
+curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/feed/occupancy"
+curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/feed/occupancy/by-page"
+curl -I -H "x-api-key: client-one-secret" "http://localhost:9005/admin/api/v1/eventstreams"
 ```
 All but the last call should succeed (HTTP 200) while the last one is forbidden (HTTP 403) because we are authenticated but not authorized to use the admin API.
 > **Note** that we need to pass the API key using the header `x-api-key: <well-known-key>`.
@@ -304,19 +304,19 @@ All but the last call should succeed (HTTP 200) while the last one is forbidden 
 Finally, if we pass the admin API key all calls should be possible:
 ```bash
 clear
-curl -I -H "x-api-key: admin-secret" http://localhost:9005/
-curl -I -H "x-api-key: admin-secret" http://localhost:9005/feed/occupancy
-curl -I -H "x-api-key: admin-secret" http://localhost:9005/feed/occupancy/by-page
-curl -I -H "x-api-key: admin-secret" http://localhost:9005/admin/api/v1/eventstreams
+curl -I -H "x-api-key: admin-secret" "http://localhost:9005/"
+curl -I -H "x-api-key: admin-secret" "http://localhost:9005/feed/occupancy"
+curl -I -H "x-api-key: admin-secret" "http://localhost:9005/feed/occupancy/by-page"
+curl -I -H "x-api-key: admin-secret" "http://localhost:9005/admin/api/v1/eventstreams"
 ```
 Now all calls succeed. Great!
 
 We need to verify one more rule: nobody (not even an administrator!) should we able to send data to the ingest endpoint of the LDES server:
 ```bash
 clear
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl http://localhost:9005/feed/occupancy
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl http://localhost:9005/feed/occupancy -H "x-api-key: client-one-secret"
-curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl http://localhost:9005/feed/occupancy -H "x-api-key: admin-secret"
+curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy"
+curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy" -H "x-api-key: client-one-secret"
+curl -X POST -i -H "content-type: text/turtle" -d @./data/member.ttl "http://localhost:9005/feed/occupancy" -H "x-api-key: admin-secret"
 ```
 All calls should fail with a forbidden (HTTP 403).
 > **Note** that it would be better to return method not allowed (HTTP 405) but that seems to be a challenge in this specific reverse proxy configuration.
@@ -328,25 +328,51 @@ curl -X POST -d "@./definitions/metadata/catalog.ttl" -H "content-type: text/tur
 Should return an error similar to `Resource of type: dcat-catalog with id: c403cbbd-9e4d-47a2-8bb5-41a7642701ba already exists.` because we have already defined the catalog. But, this is great news because this means the reverse proxy let the request go through and the LDES Server returns an error response.
 
 ### Do Not Expose the LDES Server
-Now that everything is working great we can simply remove (or comment out) the port mapping of the server in the docker compose file as we do not need and do not want any direct access to it:
+Now that everything is working great we can remove the port mapping of the server in the additional [docker compose](./protect-server.yml) file (also exposing the swagger and introducing the reverse proxy) as we do not need and do not want any direct access to it:
 ```yaml
-ldes-server:
-  container_name: protected-setup_ldes-server
-  image: ldes/ldes-server:2.14.0-SNAPSHOT
-  volumes:
-    - ./ldes-server/application.yml:/application.yml:ro
-  # ports:
-  #   - 9003:80
-  ...
+services:
+  ldes-server:
+    ports: !reset [] # do not expose ports
 ```
 
 ### Access the LDES Server Through the Reverse Proxy
-Once the LDES Server is not directly accessible anymore, we need to change the `LDESSERVER_HOSTNAME` environment variable to `http://localhost:9005/feed` to use the reverse proxy instead. We also need to change the LDES Client configuration to use a new URL (`http://localhost:9005/feed/occupancy`). Finally, we should not forget the most important part: configure the LDES Client to pass a API key when requesting the LDES nodes:
+Once the LDES Server is not directly accessible anymore, we need to change the `LDESSERVER_HOSTNAME` environment variable to `http://host.docker.internal:9005/feed` to use the reverse proxy instead:
+```yaml
+services:
+  ldes-server:
+    environment:
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9005/feed
+```
+> **Note** that our complete [override docker compose](./protect-server.yml) file now looks like:
+```yaml
+services:
+
+  ldes-server:
+    ports: !reset [] # do not expose ports
+    environment:
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9005/feed
+    - SPRINGDOC_SWAGGERUI_PATH=/admin/doc/v1/swagger
+    - SPRINGDOC_SWAGGERUI_URLSPRIMARYNAME=base
+
+  reverse-proxy:
+    image: nginx:stable
+    container_name: protected-setup-server_reverse-proxy
+    ports:
+      - 9005:8080
+    volumes:
+      - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
+    depends_on:
+      - ldes-server
+    networks:
+      - protected-setup-server 
+```
+
+Finally, we also need to change the LDES Client configuration to use a new URL (`http://host.docker.internal:9005/feed/occupancy`) and should not forget the most important part, configure the LDES Client to pass a API key when requesting the LDES nodes:
 ```yaml
   name: Ldio:LdesClient
   config:
     urls: 
-      - http://localhost:9005/feed/occupancy
+      - http://host.docker.internal:9005/feed/occupancy
     auth:
       type: API_KEY
       api-key-header: x-api-key
@@ -356,7 +382,7 @@ Once the LDES Server is not directly accessible anymore, we need to change the `
 
 Show time! But first bring down all systems so we can start with a clean slate:
 ```bash
-docker compose down
+docker compose -f docker-compose.yml -f introduce-proxy.yml down
 ```
 
 ## Putting It All Together
@@ -365,7 +391,7 @@ To launch all the systems and configure it all you can run the following:
 clear
 
 # start and wait for the server and database systems
-LDESSERVER_HOSTNAME=http://localhost:9005/feed && docker compose up -d --wait
+docker compose -f docker-compose.yml -f protect-server.yml up -d --wait
 
 # define the LDES and the view
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
@@ -377,14 +403,13 @@ curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http:/
 curl -X POST -H "x-api-key: admin-secret" -H "content-type: text/turtle" "http://localhost:9005/admin/api/v1/eventstreams/occupancy/views/by-page/dcat" -d "@./definitions/metadata/occupancy.by-page.ttl"
 
 # start the publish and client pipelines
-curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./definitions/publish-pipeline.yml
-curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api/v1/pipeline --data-binary @./definitions/protected-client-pipeline.yml
+curl -X POST -H "content-type: application/yaml" "http://localhost:9004/admin/api/v1/pipeline" --data-binary @./definitions/publish-pipeline.yml
+curl -X POST -H "content-type: application/yaml" "http://localhost:9006/admin/api/v1/pipeline" --data-binary @./definitions/protected-client-pipeline.yml
 
 # check the sink system
 while true; do curl http://localhost:9007; echo ""; sleep 15; done
 ```
 > **Note** that we:
-> * define `LDESSERVER_HOSTNAME` before launching the systems,
 > * use the admin endpoint (`http://localhost:9005/admin`) for sending LDES and metadata definitions,
 > * provide our admin x-api-key for these requests, and
 > * use a different pipeline (`protected-client-pipeline`).
@@ -398,5 +423,5 @@ We have shown you how to enable the swagger UI, how to provide metadata for your
 
 Now that you have verified that the members appear in the sink you can shutdown the systems and remove the private network using:
 ```bash
-docker compose down
+docker compose -f docker-compose.yml -f protect-server.yml down
 ```

@@ -17,7 +17,7 @@ services:
 
   ldes-server:
     container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:2.14.0-SNAPSHOT
+    image: ldes/ldes-server:2.14.0
     volumes:
       - ./ldes-server/application.yml:/application.yml:ro
     ports:
@@ -27,17 +27,17 @@ services:
     depends_on:
       - ldes-mongodb
     environment:
-    - LDESSERVER_HOSTNAME=${LDESSERVER_HOSTNAME:-http://localhost:9003/ldes}
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9003/ldes
     - SIS_DATA=/tmp
     - SERVER_SERVLET_CONTEXTPATH=/ldes
-    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/advanced-conversion
+    - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/protected-setup
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
 
 
   server-workbench:
     container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     volumes:
       - ./server-workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -49,32 +49,24 @@ services:
     depends_on:
       - ldes-server
 
-      
-  # reverse-proxy:
-  #   image: nginx:stable
-  #   container_name: protected-setup-server_reverse-proxy
-  #   ports:
-  #     - 9005:8080
-  #   volumes:
-  #     - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
-  #   depends_on:
-  #     - ldes-server
-  #   networks:
-  #     - protected-setup-server 
-
 
   client-workbench:
     container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.5.1
     environment:
-      - LDES_CLIENT_WORKBENCH_PORT=9006
+      - SERVER_PORT=80
     volumes:
       - ./client-workbench/application.yml:/ldio/application.yml:ro
-    network_mode: "host"
+    networks:
+      - protected-setup-client
+    ports:
+      - 9006:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - sink-system
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
 
 
   sink-system:
