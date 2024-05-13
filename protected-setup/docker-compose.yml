@@ -49,19 +49,6 @@ services:
     depends_on:
       - ldes-server
 
-      
-  # reverse-proxy:
-  #   image: nginx:stable
-  #   container_name: protected-setup-server_reverse-proxy
-  #   ports:
-  #     - 9005:8080
-  #   volumes:
-  #     - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
-  #   depends_on:
-  #     - ldes-server
-  #   networks:
-  #     - protected-setup-server 
-
 
   client-workbench:
     container_name: protected-setup-server_client-workbench

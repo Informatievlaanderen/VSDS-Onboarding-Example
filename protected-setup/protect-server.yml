@@ -1,0 +1,20 @@
+services:
+
+  ldes-server:
+    ports: !reset [] # do not expose ports
+    environment:
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9005/feed
+    - SPRINGDOC_SWAGGERUI_PATH=/admin/doc/v1/swagger
+    - SPRINGDOC_SWAGGERUI_URLSPRIMARYNAME=base
+
+  reverse-proxy:
+    image: nginx:stable
+    container_name: protected-setup-server_reverse-proxy
+    ports:
+      - 9005:8080
+    volumes:
+      - ./reverse-proxy/protect-ldes-server.conf:/etc/nginx/conf.d/protect-ldes-server.conf:ro
+    depends_on:
+      - ldes-server
+    networks:
+      - protected-setup-server 
