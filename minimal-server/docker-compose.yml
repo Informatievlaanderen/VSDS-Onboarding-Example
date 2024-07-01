@@ -14,7 +14,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
       - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
-      # - SPRING_JPA_HIBERNATE_DDLAUTO=update
     volumes:
       - ./config/application.yml:/application.yml:ro
     ports:
