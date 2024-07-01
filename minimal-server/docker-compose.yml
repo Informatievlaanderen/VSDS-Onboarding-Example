@@ -6,11 +6,15 @@ services:
 
   ldes-server:
     container_name: minimal-server_ldes-server
-    image: ldes/ldes-server:2.14.0
+    image: ldes/ldes-server:3.1.0-SNAPSHOT
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/minimal-server
-      - LDESSERVER_HOSTNAME=http://localhost:9003
       - SIS_DATA=/tmp
+      - LDESSERVER_HOSTNAME=http://localhost:9003
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/minimal-server
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+      - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
+      # - SPRING_JPA_HIBERNATE_DDLAUTO=update
     volumes:
       - ./config/application.yml:/application.yml:ro
     ports:
@@ -18,14 +22,18 @@ services:
     networks:
       - minimal-server
     depends_on:
-      - ldes-mongodb
+      - ldes-postgresdb
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server:8080/actuator/health"]
 
-  ldes-mongodb:
-    container_name: minimal-server_ldes-mongodb
-    image: mongo:latest
+  ldes-postgresdb:
+    container_name: minimal-server_ldes-postgresdb
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=minimal-server
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PWD}
     ports:
-      - 27017:27017
+      - 5432:5432
     networks:
       - minimal-server
