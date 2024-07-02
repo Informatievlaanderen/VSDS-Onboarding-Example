@@ -65,18 +65,22 @@ As usual, we start by creating a [docker compose file](./docker-compose.yml) con
 We do not really need to expose the two databases but if we do then we obviously need to map them on a different port on the host:
 ```yaml
 publisher-database:
-  container_name: protected-setup_publisher-database
-  image: mongo:latest
-  ports:
-    - 27017:27017
+  container_name: broker-setup_publisher-database
+  image: postgres:latest
+  environment:
+    - POSTGRES_DB=publisher-ldes
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PWD}
   networks:
     - common-network
 
 broker-database:
-  container_name: protected-setup_broker-database
-  image: mongo:latest
-  ports:
-    - 27018:27017
+  container_name: broker-setup_broker-database
+  image: postgres:latest
+  environment:
+    - POSTGRES_DB=broker-ldes
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PWD}
   networks:
     - common-network
 ```
@@ -283,7 +287,9 @@ clear
 
 # start and wait for the servers and databases
 docker compose up -d --wait
-
+```
+followed by:
+```bash
 # upload Data Publisher LDES & view definitions
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams" -d "@./publisher-server/definitions/occupancy.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./publisher-server/definitions/occupancy.by-page.ttl"
@@ -293,7 +299,9 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/ap
 curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./broker-server/definitions/occupancy.by-time.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./broker-server/definitions/occupancy.by-location.ttl"
 curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/api/v1/eventstreams/occupancy/views" -d "@./broker-server/definitions/occupancy.by-parking.ttl"
-
+```
+and finally:
+```bash
 # start and wait for the publisher and broker workbench
 docker compose up publisher-workbench -d
 docker compose up broker-workbench -d
@@ -301,16 +309,19 @@ docker compose up broker-workbench -d
 
 You can already check the existence of our additional Data Broker views using:
 ```bash
+clear
 curl http://localhost:9001/ldes/occupancy/by-time
 curl http://localhost:9001/ldes/occupancy/by-location
 curl http://localhost:9001/ldes/occupancy/by-parking
 ```
 
-After a bit of time data will start appearing in these views. Replicating the history of the Data Publisher data collection will be almost instantaneous in our case because we just started the Data Publisher's systems. After that the synchronization happens almost immediately as well because the source data produces only 5 members per minute. Basically, you should see all views grow by 5 members every minute.
+After a bit of time data will start appearing in these views. Replicating the history of the Data Publisher data collection will be almost instantaneous in our case because we just started the Data Publisher's systems. After that the synchronization happens almost immediately as well because the source data produces only 5 members per minute. Basically, you should see all views grow by 5 members every minute. E.g.:
 
-You can also check how long members are available in each view and when your members and fragments are deleted. For these you will need to look inside your database using tools like [MongoDB Compass](https://www.mongodb.com/products/tools/compass).
+```bash
+curl http://localhost:9001/ldes/occupancy/by-parking?parking-lot=
+```
 
->  **Note**  that in order to show you the retention, compaction and deletion in action we have lowered the retention periods to hours and minutes and increased the frequency of the background tasks. Make sure you balance the schedule configurations correctly as these tasks put some load on your systems as the amount of members increases.
+>  **Note** that in order to show you the retention, compaction and deletion in action we have lowered the retention periods to hours and minutes and increased the frequency of the background tasks. Make sure you balance the schedule configurations correctly as these tasks put some load on your systems as the amount of members increases.
 
 ## Cleanup
 

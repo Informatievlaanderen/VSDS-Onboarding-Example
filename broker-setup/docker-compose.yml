@@ -8,9 +8,11 @@ services:
 
   publisher-database:
     container_name: broker-setup_publisher-database
-    image: mongo:latest
-    ports:
-      - 27017:27017
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=publisher-ldes
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PWD}
     networks:
       - common-network
 
@@ -31,7 +33,7 @@ services:
 
   publisher-server:
     container_name: broker-setup_publisher-server
-    image: ldes/ldes-server:2.14.0
+    image: ldes/ldes-server:3.1.0-SNAPSHOT
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
     ports:
@@ -42,6 +44,13 @@ services:
       - publisher-database
     environment:
       - LDES_SERVER_HOST_NAME=http://publisher-server/ldes
+      - SIS_DATA=/tmp
+      - SERVER_PORT=80
+      - SERVER_SERVLET_CONTEXTPATH=/ldes
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://publisher-database:5432/publisher-ldes
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+      - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://publisher-server/ldes/actuator/health"]
 
@@ -50,9 +59,11 @@ services:
 
   broker-database:
     container_name: broker-setup_broker-database
-    image: mongo:latest
-    ports:
-      - 27018:27017
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=broker-ldes
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PWD}
     networks:
       - common-network
 
@@ -75,7 +86,7 @@ services:
 
   broker-server:
     container_name: broker-setup_broker-server
-    image: ldes/ldes-server:2.14.0
+    image: ldes/ldes-server:3.1.0-SNAPSHOT
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:
@@ -86,5 +97,12 @@ services:
       - broker-database
     environment:
       - LDES_SERVER_HOST_NAME=http://localhost:9001/ldes
+      - SIS_DATA=/tmp
+      - SERVER_PORT=80
+      - SERVER_SERVLET_CONTEXTPATH=/ldes
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://broker-database:5432/broker-ldes
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+      - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://broker-server/ldes/actuator/health"]
