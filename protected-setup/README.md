@@ -1,5 +1,5 @@
 # Publishing a Protected LDES
-> **UPDATED** this tutorial has been changed to define the publish pipeline dynamically and to add a (test) sink system. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/protected-setup).
+> **UPDATED** this tutorial has been changed to use Postgres as a data store instead of a MongoDB (which is obsoleted as of [LDES Server version 3.x](https://github.com/Informatievlaanderen/VSDS-LDESServer4J/releases/tag/v3.0.0-alpha)). You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v2.0.0/protected-setup).
 
 This tutorial will show you how to protect a LDES in order to prevent unauthorized access to a proprietary (or a public) data collection. It will also show how to expose the available LDES Server API as well as add and expose some metadata (using DCAT). In addition it will show you how to access such a protected LDES.
 

@@ -1,5 +1,5 @@
 # Publishing a Simple Data Set With a Basic Setup
-> **UPDATED** this tutorial has been changed to define the pipeline dynamically and to process regular (state) objects instead of creating (historical) version objects. You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v1.0.0/basic-setup).
+> **UPDATED** this tutorial has been changed to use Postgres as a data store instead of a MongoDB (which is obsoleted as of [LDES Server version 3.x](https://github.com/Informatievlaanderen/VSDS-LDESServer4J/releases/tag/v3.0.0-alpha)). You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v2.0.0/basic-setup).
 
 This quick start guide will show you how to combine a [LDIO Workbench](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/) and a [LDES Server](https://informatievlaanderen.github.io/VSDS-LDESServer4J/) to create a basic setup for publishing [linked data](https://en.wikipedia.org/wiki/Linked_data) as a [Linked Data Event Stream (LDES)](https://semiceu.github.io/LinkedDataEventStreams/).
 

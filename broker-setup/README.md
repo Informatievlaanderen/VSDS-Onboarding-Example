@@ -1,4 +1,6 @@
 # Republishing an Existing LDES
+> **UPDATED** this tutorial has been changed to use Postgres as a data store instead of a MongoDB (which is obsoleted as of [LDES Server version 3.x](https://github.com/Informatievlaanderen/VSDS-LDESServer4J/releases/tag/v3.0.0-alpha)). You can find the previous version [here](https://github.com/Informatievlaanderen/VSDS-Onboarding-Example/tree/v2.0.0/broker-setup).
+
 This tutorial will show you (as a Data Publisher or a Data Broker) how you can offer different views on a LDES while still keeping your storage and bandwidth costs under control. It will show you how these views can be _fragmented_ in one or more ways and how you can control the _retention_ of members of the available data collections.
 
 ## Organise, Every Other Day I Organize
