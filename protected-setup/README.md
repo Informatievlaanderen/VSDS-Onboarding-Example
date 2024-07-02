@@ -18,21 +18,25 @@ We will show how you can protect a LDES and what changes are needed to retrieve 
 
 But first, let us setup the system without access limitation first to ensure everything works fine. As usual, we start by creating a docker compose file containing the services that we need.
 
-At the Data Publisher side we need a database for the LDES Server (`ldes-mongodb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
+At the Data Publisher side we need a database for the LDES Server (`ldes-postgresdb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
 
 ```yaml
-ldes-mongodb:
-  container_name: protected-setup-server_ldes-mongodb
-  image: mongo:latest
+ldes-postgresdb:
+  container_name: protected-setup-server_ldes-postgresdb
+  image: postgres:latest
+  environment:
+    - POSTGRES_DB=protected-setup
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PWD}
   ports:
-    - 27017:27017
+    - 5432:5432
   networks:
     - protected-setup-server
 
 
 ldes-server:
   container_name: protected-setup-server_ldes-server
-  image: ldes/ldes-server:2.14.0
+  image: ldes/ldes-server:3.1.0-SNAPSHOT
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   ports:
@@ -40,17 +44,21 @@ ldes-server:
   networks:
     - protected-setup-server
   depends_on:
-    - ldes-mongodb
+    - ldes-postgresdb
   environment:
-  - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
-  - SIS_DATA=/tmp
-  - SERVER_SERVLET_CONTEXTPATH=
-  - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/protected-setup
+    - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
+    - SIS_DATA=/tmp
+    - SERVER_SERVLET_CONTEXTPATH=
+    - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/protected-setup
+    - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+    - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+    - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
   healthcheck:
     test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
     interval: 12s
     timeout: 3s
     retries: 20
+
 
 server-workbench:
   container_name: protected-setup-server_server-workbench
