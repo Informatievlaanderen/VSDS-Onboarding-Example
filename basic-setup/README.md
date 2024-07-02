@@ -8,7 +8,7 @@ Please see the [introduction](../README.md) for the example data set and pre-req
 ## All the Things We Need
 In order to publish your data set as a LDES you will need to setup and configure a few systems. To start with you need a LDES Server. It will accepts, store and serve the data set. Next you will need a workbench which at the least creates version objects from your data set which typically consists of state objects. In addition, as your data set will typically not be linked data, you will have to create a small pipeline in the workbench to transform your custom data model formatted in whatever format that you expose to a linked data model. The LDES server can ingest the resulting linked data model from several [RDF](https://en.wikipedia.org/wiki/Resource_Description_Framework) serializations and serve the event stream in any of those [RDF formats](https://en.wikipedia.org/wiki/Resource_Description_Framework#Serialization_formats).
 
-Let's start by creating a [Docker Compose](https://docs.docker.com/compose/) file containing a LDES server, its [MongoDB](https://www.mongodb.com/) storage container and a LDIO Workbench. First, we start by naming the file `docker-compose.yml` and add the file version and a private network which allows our three systems to interact:
+Let's start by creating a [Docker Compose](https://docs.docker.com/compose/) file containing a LDES server, its [Postgres](https://www.postgresql.org/) storage container and a LDIO Workbench. First, we start by naming the file `docker-compose.yml` and add the file version and a private network which allows our three systems to interact:
 
 ```yaml
 networks:
@@ -16,30 +16,39 @@ networks:
     name: basic-setup_ldes-network
 ```
 
-We add the MongoDB system as our first service. We simply use the latest `mongo` image from [Docker Hub](https://hub.docker.com/_/mongo) and expose the default MongoDB port. This allows use to use a tool such as [MongoDB Compass](https://www.mongodb.com/products/tools/compass) to examine the database if needed:
+We add the Postgres system as our first service. We simply use the latest `postgres` image from [Docker Hub](https://hub.docker.com/_/postgres) and expose the default Postgres port. We also pre-define a database naled `basic-setup` and pass in the database credentials using environment variables (found in the [.env file](./.env)):
 
 ```yaml
 services:
 
-  ldes-mongodb:
-    container_name: basic-setup_ldes-mongodb
-    image: mongo:latest
+  ldes-postgresdb:
+    container_name: basic-setup_ldes-postgresdb
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=basic-setup
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PWD}
     ports:
-      - 27017:27017
+      - 5432:5432
     networks:
       - basic-setup
 ```
 
-After that we add a LDES Server as a service, point it to its configuration file using volume mapping, expose its port so we can retrieve the event stream, set some environment variables (see [later](#create-the-ldes-server-configuration-file)) and set it to depend on the storage container in order to delay starting the server container until after the storage container:
+After that we add a LDES Server as a service, point it to its configuration file using volume mapping, expose its port so we can retrieve the event stream, set some environment variables (see [later](#ldes-server-environment-settings)) and set it to depend on the storage container in order to delay starting the server container until after the storage container:
 
 ```yaml
   ldes-server:
     container_name: basic-setup_ldes-server
     image: ldes/ldes-server:2.14.0
     environment:
+      - SERVER_PORT=80
+      - SIS_DATA=/tmp
       - SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes
-      - SPRING_DATA_MONGODB_URI=mongodb://ldes-mongodb/basic-setup
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/basic-setup
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+      - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
     volumes:
       - ./server/application.yml:/application.yml:ro
     ports:
@@ -47,7 +56,7 @@ After that we add a LDES Server as a service, point it to its configuration file
     networks:
       - basic-setup
     depends_on:
-      - ldes-mongodb
+      - ldes-postgresdb
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server:8080/actuator/health"]
 ```
@@ -72,21 +81,17 @@ We end up with [this](./docker-compose.yml) Docker compose file. At this point w
 
 > **Note** that we also add health checks to ensure we can wait until the components are actually fully initialized and ready.
 
-## Create the LDES Server Configuration File
-Let's continue by creating a configuration file for the LDES Server. But before we do we need to think about and decide on a few things:
+### LDES Server Environment Settings
+Let's continue by defining the environment settings for the LDES Server. But before we do we need to think about and decide on a few things:
 * in which database do we store the LDES and related information?
 * on what sub-path will we serve our LDES?
 * on what port will we run our server?
 
-For this tutorial we can pick any name for the database. Let's go for `basic-setup`. As within our private Docker network the containers can be reached by using their service name, the MongoDB connection string becomes `mongodb://ldes-mongodb/basic-setup`. We do not need to specify the default port `27017`.
+For this tutorial we can pick any name for the database. Let's go for `basic-setup`. As within our private Docker network the containers can be reached by using their service name, the Postgres connection string becomes `jdbc:postgresql://ldes-postgresdb:5432/basic-setup`.
 
-For the port (`server.port`) and sub-path (`server.servlet.context-path`) on which the LDES Server is available we'll go for `80` respectively `/ldes`.  
+For the port (`SERVER_PORT`) and sub-path (`SERVER_SERVLET_CONTEXTPATH`) on which the LDES Server is available we'll go for `80` respectively `/ldes`.  
 
-> **Note** that we had to specify that indexes should be created automatically by the application (`auto-index-creation: true`).
-
-> **Note** that we also need to specify the external base URL of the LDES so that we can follow the event stream from our local system (`host-name: http://localhost:9003/ldes`) because we set a sub-path (`context-path: /ldes`). Of course if we would change the server's [external port number](./docker-compose.yml#L23) in the Docker compose file, we need to change it here as well.
-
-We can also define these values in the Docker Compose file by specifying environment variables which will be picked up by the LDES Server. This is the preferred way for those settings that define links to other components or information which is depend on things that we define in the compose file. The variables are in caps, contain no dashes and use an underscore instead of a dot, e.g. `server.servlet.context-path` becomes `SERVER_SERVLET_CONTEXTPATH`.
+> **Note** that we also need to specify the external base URL of the LDES so that we can follow the event stream from our local system (`LDESSERVER_HOSTNAME=http://localhost:9003/ldes`) because we set a sub-path (`SERVER_SERVLET_CONTEXTPATH=/ldes`). Of course if we would change the server's [external port number](./docker-compose.yml#L23) in the Docker compose file, we need to change it here as well.
 
 ## Create the LDIO Workbench Configuration File
 For the workbench configuration file we can start from the [configuration](../minimal-workbench/config/application.yml) we used for the [minimal workbench tutorial](../minimal-workbench/README.md) but we serve the pipelines on a different port (`80`).
