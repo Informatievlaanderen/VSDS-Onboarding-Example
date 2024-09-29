@@ -16,16 +16,15 @@ networks:
     name: basic-setup_ldes-network
 ```
 
-We add the Postgres system as our first service. We simply use the latest `postgres` image from [Docker Hub](https://hub.docker.com/_/postgres) and expose the default Postgres port. We also pre-define a database naled `basic-setup` and pass in the database credentials using environment variables (found in the [.env file](./.env)):
+We add the Postgres system as our first service. We simply use the latest `postgres` image from [Docker Hub](https://hub.docker.com/_/postgres) and expose the default Postgres port. For this tutorial we can pick any name for the database. Let's go for `basic-setup`. We pass the database name to have Postgres pre-create it as well as the database credentials using environment variables (found in the [.env file](./.env)):
 
 ```yaml
 services:
 
   ldes-postgresdb:
-    container_name: basic-setup_ldes-postgresdb
     image: postgres:latest
     environment:
-      - POSTGRES_DB=basic-setup
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PWD}
     ports:
@@ -38,17 +37,19 @@ After that we add a LDES Server as a service, point it to its configuration file
 
 ```yaml
   ldes-server:
-    container_name: basic-setup_ldes-server
-    image: ldes/ldes-server:2.14.0
+    image: ldes/ldes-server:3.4.0-SNAPSHOT
     environment:
       - SERVER_PORT=80
       - SIS_DATA=/tmp
-      - SERVLET_CONTEXTPATH=/ldes
+      - SERVER_SERVLET_CONTEXTPATH=/ldes
       - LDESSERVER_HOSTNAME=http://localhost:9003/ldes
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/basic-setup
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
       - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
+      - MANAGEMENT_TRACING_ENABLED=false
+      - SPRING_TASK_SCHEDULING_POOL_SIZE=5
+      - LDESSERVER_FRAGMENTATIONCRON=${LDES_SERVER_FRAGMENTATION_CRON:-*/1 * * * * *}
     volumes:
       - ./server/application.yml:/application.yml:ro
     ports:
@@ -58,15 +59,16 @@ After that we add a LDES Server as a service, point it to its configuration file
     depends_on:
       - ldes-postgresdb
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/ldes/actuator/health"]
 ```
 
 Finally, we add a LDIO Workbench as a service. It too needs to have access to its configuration file which we again provide using volume mapping. We also need to expose the workbench listener port so we can feed it with models from our custom data set.
 
 ```yaml
   ldio-workbench:
-    container_name: basic-setup_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
+    environment:
+      - SERVER_PORT=80
     volumes:
       - ./workbench/application.yml:/ldio/application.yml:ro
     ports:
@@ -74,7 +76,7 @@ Finally, we add a LDIO Workbench as a service. It too needs to have access to it
     networks:
       - basic-setup 
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://ldes-server-workbench:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://ldio-workbench/actuator/health"]
 ```
 
 We end up with [this](./docker-compose.yml) Docker compose file. At this point we cannot start the containers yet as we do refer to the LDES Server and the LDIO Workbench configuration files but we still need to create them.
@@ -87,14 +89,14 @@ Let's continue by defining the environment settings for the LDES Server. But bef
 * on what sub-path will we serve our LDES?
 * on what port will we run our server?
 
-For this tutorial we can pick any name for the database. Let's go for `basic-setup`. As within our private Docker network the containers can be reached by using their service name, the Postgres connection string becomes `jdbc:postgresql://ldes-postgresdb:5432/basic-setup`.
+As within our private Docker network the containers can be reached by using their service name, the Postgres connection string becomes `jdbc:postgresql://ldes-postgresdb:5432/${POSTGRES_DB}`.
 
 For the port (`SERVER_PORT`) and sub-path (`SERVER_SERVLET_CONTEXTPATH`) on which the LDES Server is available we'll go for `80` respectively `/ldes`.  
 
 > **Note** that we also need to specify the external base URL of the LDES so that we can follow the event stream from our local system (`LDESSERVER_HOSTNAME=http://localhost:9003/ldes`) because we set a sub-path (`SERVER_SERVLET_CONTEXTPATH=/ldes`). Of course if we would change the server's [external port number](./docker-compose.yml#L23) in the Docker compose file, we need to change it here as well.
 
 ## Create the LDIO Workbench Configuration File
-For the workbench configuration file we can start from the [configuration](../minimal-workbench/config/application.yml) we used for the [minimal workbench tutorial](../minimal-workbench/README.md) but we serve the pipelines on a different port (`80`).
+For the workbench configuration we choose to serve the pipelines on a different port (`SERVER_PORT=80`).
 
 The workbench allows for dynamically creating pipelines so we create a pipeline definition which we will send to the workbench. As we are now creating an integrated setup, we will not send the generated members to the container log using the `ConsoleOut` component, but instead we use the `LdioHttpOut` component. This component allows us to send the member to the LDES server ingest endpoint over HTTP. How do we determine this HTTP ingest endpoint? Because the LDIO Workbench and the LDES Server share the same private network, the workbench can address the server using its service name `ldes-server` as server path `http://ldes-server`. As we have set the sub-path to serve all event streams from `/ldes` we append that to the server path. Finally, as we [define](./definitions/occupancy.ttl) our LDES in the same way as we did in the [minimal server tutorial](../minimal-server/README.md), we need to append the name of the LDES (`/occupancy`). Putting all of this together, in this tutorial the HTTP ingest endpoint for our LDES becomes `http://ldes-server/ldes/occupancy`. The configuration for our output thus becomes:
 
