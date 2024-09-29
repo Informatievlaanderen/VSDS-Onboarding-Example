@@ -17,10 +17,9 @@ So, the minimal pipeline that you need is a LDES Client plus one of the supporte
 In fact, the pipeline configuration is the only thing we need in addition to a docker compose file! So, how does our docker compose file look like? Well, it is as simple as this for the workbench part:
 ```yaml
   ldio-workbench:
-    container_name: public-ldes_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./application.yml:/ldio/application.yml:ro
+    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
+    environment:
+      - SERVER_PORT=80
     ports:
       - 9006:80
     networks:
@@ -66,7 +65,7 @@ curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api
 
 You can follow the number of members being replicated using:
 ```bash
-while true; do curl http://localhost:9007; echo ""; sleep 2; done
+while true; do curl http://localhost:9007; echo ""; sleep 1; done
 ```
 > Press `CTRL-C` to stop following the count.
 
