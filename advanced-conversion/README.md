@@ -461,7 +461,7 @@ After a bit of time, you will see something similar to this in the workbench doc
 
  To display and keep following the workbench log for updates you can execute the following:
 ```bash
-docker logs -f $(docker ps -q -f "name=ldio-workbench$")
+docker logs -f $(docker ps -q -f "name=ldio-workbench")
 ```
 Press `CTRL-C` to stop following the logs.
 
@@ -585,5 +585,3 @@ To bring the containers down and remove the private network:
 ```bash
 docker compose down
 ```
-
-> **Note** that to bring down the workbench we need to stop it and remove the container and associated volumes explicitly because we started it separately.
