@@ -3,6 +3,3 @@ logging:
     root: WARN
     be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO
 
-management:
-  tracing:
-    enabled: false
