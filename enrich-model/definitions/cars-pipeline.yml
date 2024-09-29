@@ -15,7 +15,7 @@ input:
           }
         }
 outputs:
-  - name: Ldio:RepositoryMaterialiser # store in our graph database
+  - name: Ldio:RepositorySink # store in our graph database
     config:
       sparql-host: http://graph-database:8080/rdf4j-server
       repository-id: cars

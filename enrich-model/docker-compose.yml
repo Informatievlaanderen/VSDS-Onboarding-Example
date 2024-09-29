@@ -5,7 +5,6 @@ networks:
 services:
 
   graph-database:
-    container_name: enrich-model_graph-database
     image: eclipse/rdf4j-workbench:latest
     ports:
       - 9008:8080
@@ -16,8 +15,7 @@ services:
 
 
   ldio-workbench:
-    container_name: enrich-model_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
+    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
     environment:
       - SERVER_PORT=80
       - LOGGING_LEVEL_ROOT=INFO
@@ -30,7 +28,6 @@ services:
 
 
   sink-system:
-    container_name: enrich-model_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
       - 9007:80

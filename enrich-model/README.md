@@ -24,7 +24,6 @@ Because we will be processing very little data, it suffices to use an in-memory 
 services:
 
   graph-database:
-    container_name: enrich-model_graph-database
     image: eclipse/rdf4j-workbench:latest
     ports:
       - 9008:8080
@@ -38,8 +37,7 @@ services:
 The workbench configuration is trivial as well:
 ```yaml
   ldio-workbench:
-    container_name: enrich-model_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
+    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
     environment:
       - SERVER_PORT=80
       - LOGGING_LEVEL_ROOT=INFO
@@ -55,7 +53,6 @@ The workbench configuration is trivial as well:
 Finally, we need to configure our sink system:
 ```yaml
   sink-system:
-    container_name: enrich-model_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
       - 9007:80
@@ -89,7 +86,7 @@ input:
           }
         }
 outputs:
-  - name: Ldio:RepositoryMaterialiser # store in our graph database
+  - name: Ldio:RepositorySink # store in our graph database
     config:
       sparql-host: http://graph-database:8080/rdf4j-server
       repository-id: cars
