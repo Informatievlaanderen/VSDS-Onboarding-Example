@@ -29,8 +29,6 @@ All these components are provided as part of the LDIO workbench which is package
 ## Configure Your First Pipeline
 The example [docker compose file](./docker-compose.yml) only contains a LDIO service which runs in a private network and uses volume mapping to have its configuration file available in the container. As we will see in a minute, the pipeline starts with a HTTP listener and therefore we need a port mapping to allow the workbench to receive HTTP messages.
 
-The [workbench configuration file](./config/application.yml) only specifies the port on which the HTTP listener will accept requests. We have used the default port number 8080 and could have easily omitted it from the configuration. We do not need to specify the actual pipeline definition here as we will be sending it dynamically to the LDIO Workbench.
-
 > **Note** that the workbench can contain more than one pipeline if needed. We simply need to define our pipelines with a different name using lowercase or uppercase letters, digits, blanks and the special characters `_`, `-`  & `.`.
 
 The [pipeline definition](./definitions/pipeline.yml) starts with a name and a description. The latter is purely for documentation purposes, but the former is used as the base path on which the HTTP listener receives requests. In our case this is (based on the docker compose port mapping): http://localhost:9004/park-n-ride-pipeline. After that the definition continues with the input component and associated adapter, the (optional) transformation steps and the output(s). Let's look at these in more detail.
@@ -42,20 +40,6 @@ input:
   adapter:
     name: Ldio:RdfAdapter
 ```
-
-> **Note** that as of LDES Server 2.12.0 you do not need to create version objects for the linked data state objects anymore as you can configure the server to automatically create version objects on ingestion. See the [Setting Up a Minimal LDES Server](../minimal-server/README.md) tutorial on how to do this.
->
-> Before LDES Server 2.12.0 we need a transformation step to turn the linked data state object which we receive into a version object. We need to specify for which object type we need to change it to a version object. We use this type to retrieve that object's identifier and create the version object ID based on this identifier concatenated with the delimiter and the value of the `date-observed-property`. We also use the identifier to add a property as specified by `versionOf-property` to the version object. Finally, we also use the `date-observed-property` value to add a property as defined by the `generatedAt-property` to the version object. This sounds way more complicated than it actually is as we will show later. 
-> ```yaml
-> transformers:
->   - name: Ldio:VersionObjectCreator
->     config:
->       member-type: https://example.org/ns/mobility#offStreetParkingGround
->       delimiter: "/"
->       date-observed-property: <http://www.w3.org/ns/prov#generatedAtTime>
->       generatedAt-property: http://www.w3.org/ns/prov#generatedAtTime
->       versionOf-property: http://purl.org/dc/terms/isVersionOf
-> ```
 
 We output the linked data (state) objects to the specified sink(s). For demo purposes we use a component that simply logs the member to the console, which for a Docker container results in its logs.
 ```yaml
@@ -118,7 +102,7 @@ Since it is a small and straight forward message the workbench log will almost i
 
 To watch the version object appear in the workbench log
 ```bash
-docker logs -n 24 $(docker ps -q -f "name=ldio-workbench$")
+docker logs -n 24 $(docker ps -q -f "name=ldio-workbench")
 ```
 
 You should see the following:

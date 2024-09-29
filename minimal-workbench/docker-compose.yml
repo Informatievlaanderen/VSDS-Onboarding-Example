@@ -5,10 +5,9 @@ networks:
 services:
 
   ldio-workbench:
-    container_name: minimal-workbench_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./config/application.yml:/ldio/application.yml:ro
+    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
+    environment:
+      - SERVER_PORT=8080
     ports:
       - 9004:8080
     networks:
