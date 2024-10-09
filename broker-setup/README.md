@@ -304,14 +304,15 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9001/ldes/admin/ap
 ```
 and finally:
 ```bash
-# start and wait for the publisher and broker workbench
-docker compose up publisher-workbench -d
-docker compose up broker-workbench -d
+# seed the publisher and broker workbench pipelines
+curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api/v1/pipeline --data-binary @./publisher-workbench/seed/park-n-ride-pipeline.yml
+curl -X POST -H "content-type: application/yaml" http://localhost:9002/admin/api/v1/pipeline --data-binary @./broker-workbench/seed/client-pipeline.yml
 ```
 
-You can already check the existence of our additional Data Broker views using:
+You can already check the existence of our publisher views and additional Data Broker views using:
 ```bash
 clear
+curl http://localhost:9003/ldes/occupancy/by-page
 curl http://localhost:9001/ldes/occupancy/by-time
 curl http://localhost:9001/ldes/occupancy/by-location
 curl http://localhost:9001/ldes/occupancy/by-parking
@@ -326,9 +327,7 @@ curl http://localhost:9001/ldes/occupancy/by-parking?parking-lot=
 >  **Note** that in order to show you the retention, compaction and deletion in action we have lowered the retention periods to hours and minutes and increased the frequency of the background tasks. Make sure you balance the schedule configurations correctly as these tasks put some load on your systems as the amount of members increases.
 
 ## Cleanup
-
+To stop all systems:
 ```bash
-docker compose rm broker-workbench --stop --force --volumes
-docker compose rm publisher-workbench --stop --force --volumes
 docker compose down
 ```
