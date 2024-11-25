@@ -5,7 +5,7 @@ networks:
 services:
 
   ldes-server:
-    image: ldes/ldes-server:3.4.0-SNAPSHOT
+    image: ldes/ldes-server:3.5.1-SNAPSHOT
     environment:
       - SIS_DATA=/tmp
       - LDESSERVER_HOSTNAME=http://localhost:9003
