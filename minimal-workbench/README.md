@@ -102,7 +102,7 @@ Since it is a small and straight forward message the workbench log will almost i
 
 To watch the version object appear in the workbench log
 ```bash
-docker logs -n 24 $(docker ps -q -f "name=ldio-workbench")
+docker logs -n 24 $(docker compose ps -q ldio-workbench)
 ```
 
 You should see the following:
