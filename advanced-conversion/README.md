@@ -461,7 +461,7 @@ After a bit of time, you will see something similar to this in the workbench doc
 
  To display and keep following the workbench log for updates you can execute the following:
 ```bash
-docker logs -f $(docker ps -q -f "name=ldio-workbench")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 Press `CTRL-C` to stop following the logs.
 
@@ -574,7 +574,7 @@ curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
 
 You can also simply look at the workbench docker logs file to verify that the members have been created and send to the LDES server:
 ```bash
-docker logs -f $(docker ps -q -f "name=ldio-workbench$")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 > **Note** use `CTRL-C` to stop following the logs.
 
