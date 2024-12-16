@@ -11,7 +11,7 @@ services:
   ### -- Publisher --
 
   publisher-workbench:
-    image: ldes/ldi-orchestrator:2.10.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT
     environment:
       - SERVER_PORT=80
     volumes:
@@ -40,7 +40,7 @@ services:
 
 
   publisher-server:
-    image: ldes/ldes-server:3.5.1-SNAPSHOT
+    image: ldes/ldes-server:3.6.0
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
     ports:
@@ -74,7 +74,7 @@ services:
   ### -- Broker --
 
   broker-workbench:
-    image: ldes/ldi-orchestrator:2.10.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT
     environment:
       - SERVER_PORT=80
     volumes:
@@ -89,7 +89,7 @@ services:
 
 
   broker-server:
-    image: ldes/ldes-server:3.5.1-SNAPSHOT
+    image: ldes/ldes-server:3.6.0
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:
