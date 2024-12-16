@@ -36,7 +36,7 @@ ldes-postgresdb:
 
 ldes-server:
   container_name: protected-setup-server_ldes-server
-  image: ldes/ldes-server:3.1.0-SNAPSHOT
+  image: ldes/ldes-server:3.6.0
   volumes:
     - ./ldes-server/application.yml:/application.yml:ro
   ports:
@@ -62,7 +62,7 @@ ldes-server:
 
 server-workbench:
   container_name: protected-setup-server_server-workbench
-  image: ldes/ldi-orchestrator:2.5.1
+  image: ldes/ldi-orchestrator:2.11.0
   volumes:
     - ./server-workbench/application.yml:/ldio/application.yml:ro
   ports:
@@ -86,7 +86,7 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 ```yaml
 client-workbench:
   container_name: protected-setup-server_client-workbench
-  image: ldes/ldi-orchestrator:2.5.1
+  image: ldes/ldi-orchestrator:2.11.0
   environment:
     - SERVER_PORT=80
   volumes:
