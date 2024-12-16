@@ -73,7 +73,7 @@ The [docker compose](./docker-compose.yml) file isn't all that scary either. We 
 ```yaml
   ldio-workbench:
     container_name: basic-client_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
+    image: ldes/ldi-orchestrator:2.11.0
     volumes:
       - ./application.yml:/ldio/application.yml:ro
     environment:
@@ -121,13 +121,13 @@ curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api
 
 Looking at the server workbench docker log file, you can verify which members are being created:
 ```bash
-docker logs -f $(docker ps -q -f "name=advanced-conversion_ldio-workbench$")
+docker logs -f $(docker ps -q -f "name=advanced-conversion_ldio-workbench-1")
 ```
 > **Note** use `CTRL-C` to stop following the logs.
 
 Looking at the client workbench, you will see that the LDES Client starts following the LDES view:
 ```bash
-docker logs -f $(docker ps -q -f "name=basic-client_ldio-workbench$")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 will contain something like this:
 ```text
