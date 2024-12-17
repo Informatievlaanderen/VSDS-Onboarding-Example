@@ -1,13 +1,6 @@
 
 ldes-server:
-  host-name: ${LDES_SERVER_HOST_NAME}
-  # Note: that we use prime numbers to ensure that 
-  # jobs run as little as possible at the same time
-  # (although with such a small number of members it is not needed)
-  retention-cron: "0 */7 * * * *"   # every 7 minutes
-  compaction-cron: "0 */11 * * * *" # every 11 minutes
-  compaction-duration: PT5M # keep for 5 minutes
-  deletion-cron: "0 */13 * * * *" # every 13 minutes
+  maintenance-cron: "-"  # no retention / compaction / deletion
 
 springdoc:
   swagger-ui:

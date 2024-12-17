@@ -1,6 +1,4 @@
 networks:
-  # common-network:
-  #   name: broker-setup_common-network
   publisher-network:
     name: broker-setup_publisher-network
   broker-network:
@@ -63,9 +61,6 @@ services:
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
       - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
-      - LDESSERVER_RETENTIONCRON=-
-      - LDESSERVER_COMPACTIONCRON=-
-      - LDESSERVER_DELETIONCRON=-
       - LDESSERVER_COMPACTIONDURATION=P14D
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://publisher-server/ldes/actuator/health"]
@@ -100,7 +95,7 @@ services:
       broker-database:
         condition: service_healthy
     environment:
-      - LDES_SERVER_HOST_NAME=http://localhost:9001/ldes
+      - LDESSERVER_HOSTNAME=http://localhost:9001/ldes
       - SIS_DATA=/tmp
       - SERVER_PORT=80
       - SERVER_SERVLET_CONTEXTPATH=/ldes
@@ -111,9 +106,6 @@ services:
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
       - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
-      - LDESSERVER_RETENTIONCRON=-
-      - LDESSERVER_COMPACTIONCRON=-
-      - LDESSERVER_DELETIONCRON=-
       - LDESSERVER_COMPACTIONDURATION=P14D
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://broker-server/ldes/actuator/health"]

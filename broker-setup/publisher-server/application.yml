@@ -2,3 +2,6 @@ logging:
   level:
     root: WARN
     be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO
+
+ldes-server:
+  maintenance-cron: "-"  # no retention / compaction / deletion

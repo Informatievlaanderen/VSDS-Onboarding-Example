@@ -2,3 +2,10 @@ logging:
   level:
     root: WARN
     be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO
+
+ldes-server:
+  maintenance-cron: "-"  # no retention / compaction / deletion
+  formatting:
+    prefixes:
+      mobility:                 https://example.org/ns/mobility#
+      occupancy:                http://localhost:9003/occupancy/

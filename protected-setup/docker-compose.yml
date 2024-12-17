@@ -38,6 +38,7 @@ services:
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
       - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
+      - LDESSERVER_MAINTENANCECRON=-
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
       interval: 12s
