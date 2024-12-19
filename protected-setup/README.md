@@ -164,6 +164,7 @@ services:
 > **Note** that we expose our swagger UI on the 'admin' API so we can protect it together with the rest of the admin API later.
 
 The `path` allows us to define the endpoint where the API information is visualized and the `urlsPrimaryName` allows us to choose which collection of APIs are displayed by default when we browse to the swagger UI endpoint. Now, in order to see it, we need to launch the server again:
+
 ```bash
 clear
 docker compose -f docker-compose.yml -f expose-swagger.yml up -d --wait
@@ -180,6 +181,7 @@ Now, if we switch to the admin API (select `admin` in the top right dropdown) we
 > **Note** that an API key is not a very secure way of protecting an API. If somebody gets a hold of it, it can be misused. Therefore you should keep it a secret and use HTTPS instead of HTTP communication to prevent somebody sniffing the network and gaining access to the API key.
 
 Currently we do not expose any metadata for our LDES. Without going into details of DCAT, we will simply add the metadata ([catalog](./definitions/metadata/catalog.ttl), [LDES metadata](./definitions/metadata/occupancy.ttl) and [view metadata](./definitions/metadata/occupancy.by-page.ttl)) to our LDES Server by means of the admin API. We have kept the DCAT itself to the bare minimum as that is beyond the scope of the tutorial. It will be sufficient for our purpose. To try this please run:
+
 ```bash
 # upload LDES & view definitions
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
@@ -254,7 +256,6 @@ First we need to create the reverse proxy service in the additional [docker comp
 services:
   reverse-proxy:
     image: nginx:stable
-    container_name: protected-setup-server_reverse-proxy
     ports:
       - 9005:8080
     volumes:
@@ -367,7 +368,6 @@ services:
 
   reverse-proxy:
     image: nginx:stable
-    container_name: protected-setup-server_reverse-proxy
     ports:
       - 9005:8080
     volumes:

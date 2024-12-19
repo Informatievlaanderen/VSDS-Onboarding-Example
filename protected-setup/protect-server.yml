@@ -9,7 +9,6 @@ services:
 
   reverse-proxy:
     image: nginx:stable
-    container_name: protected-setup-server_reverse-proxy
     ports:
       - 9005:8080
     volumes:
