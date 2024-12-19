@@ -67,7 +67,6 @@ As usual, we start by creating a [docker compose file](./docker-compose.yml) con
 We do not really need to expose the two databases but if we do then we obviously need to map them on a different port on the host:
 ```yaml
 publisher-database:
-  container_name: broker-setup_publisher-database
   image: postgres:latest
   environment:
     - POSTGRES_DB=publisher-ldes
@@ -77,7 +76,6 @@ publisher-database:
     - common-network
 
 broker-database:
-  container_name: broker-setup_broker-database
   image: postgres:latest
   environment:
     - POSTGRES_DB=broker-ldes
@@ -90,7 +88,6 @@ broker-database:
 For the Data Publisher, apart from some renaming here and there, both the workbench and server configurations are identical to those from the [Publishing as a standard open linked data model](./advanced-conversion/README.md) tutorial. We use the [same conversion steps](./publisher-workbench/application.yml) in the workbench (apart from polling every minute at any 30 seconds past the minute) and the [same setup](./publisher-server/application.yml) for the server:
 ```yaml
 publisher-workbench:
-  container_name: protected-setup_publisher-workbench
   image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # you can safely change this to the latest 2.x.y version
   volumes:
     - ./publisher-workbench/config:/ldio/config:ro
@@ -103,7 +100,6 @@ publisher-workbench:
     - delay-started
 
 publisher-server:
-  container_name: protected-setup_publisher-server
   image: ldes/ldes-server:3.6.0 # you can safely change this to the latest 3.x.y version
   volumes:
     - ./publisher-server/application.yml:/application.yml:ro
@@ -124,7 +120,6 @@ publisher-server:
 The Data Broker workbench pipeline is based on a LDES Client which replicates and synchronizes the view exposed by the Data Publisher LDES Server (`LDES_SERVER_URL=http://publisher-server/ldes/occupancy/by-page`). Other than that, the workbench and server services are the same as usual:
 ```yaml
 broker-workbench:
-  container_name: protected-setup_broker-workbench
   image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # you can safely change this to the latest 1.x.y version
   volumes:
     - ./broker-workbench/config:/ldio/config:ro
@@ -139,7 +134,6 @@ broker-workbench:
     - LDES_SERVER_URL=http://publisher-server/ldes/occupancy/by-page
 
 broker-server:
-  container_name: protected-setup_broker-server
   image: ldes/ldes-server:3.6.0 # you can safely change this to the latest 3.x.y version
   volumes:
     - ./broker-server/application.yml:/application.yml:ro
