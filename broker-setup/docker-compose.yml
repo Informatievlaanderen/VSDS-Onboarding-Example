@@ -6,24 +6,15 @@ networks:
 
 services:
 
-  ### -- Publisher --
-
-  publisher-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT
-    environment:
-      - SERVER_PORT=80
-    volumes:
-      - ./publisher-workbench/application.yml:/ldio/application.yml:ro
+  adminer:
+    image: adminer:${ADMINER_TAG:-latest}
     ports:
-      - 9004:80
+      - 8085:8080
     networks:
-      - publisher-network 
-    depends_on:
-      publisher-server:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://publisher-workbench/actuator/health"]
+      - publisher-network
+      - broker-network
 
+  ### -- Publisher --
 
   publisher-database:
     image: postgres:latest
@@ -61,30 +52,48 @@ services:
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
       - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
+      - LDESSERVER_MAINTENANCECRON=0 0 12 * * * # daily at noon (UTC time)
       - LDESSERVER_COMPACTIONDURATION=P14D
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://publisher-server/ldes/actuator/health"]
+      start_period: 45s
+
+
+  publisher-workbench:
+    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TODO: remove sanpshot
+    environment:
+      - SERVER_PORT=80
+    volumes:
+      - ./publisher-workbench/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9004:80
+    networks:
+      - publisher-network 
+    depends_on:
+      publisher-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://publisher-workbench/actuator/health"]
+      start_period: 5s
 
 
   ### -- Broker --
 
-  broker-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT
+  broker-database:
+    image: postgres:latest
     environment:
-      - SERVER_PORT=80
-    volumes:
-      - ./broker-workbench/application.yml:/ldio/application.yml:ro
-    ports:
-      - 9002:80
+      - POSTGRES_DB=${BROKER_POSTGRES_DB}
+      - POSTGRES_USER=${BROKER_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${BROKER_POSTGRES_PWD}
     networks:
-      - publisher-network
       - broker-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://broker-workbench/actuator/health"]
+      test: pg_isready -U ${BROKER_POSTGRES_USER} -d ${BROKER_POSTGRES_DB}
 
 
   broker-server:
-    image: ldes/ldes-server:3.6.0
+    # image: ldes/ldes-server:3.6.1
+    image: ghcr.io/informatievlaanderen/ldes-server:20241219151729 # TODO: use 3.6.1 (fixes frag ref key)
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:
@@ -105,19 +114,28 @@ services:
       - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
-      - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
-      - LDESSERVER_COMPACTIONDURATION=P14D
+      - LDESSERVER_FRAGMENTATIONCRON=*/30 * * * * * # every 30 seconds
+      - LDESSERVER_MAINTENANCECRON=0 */3 * * * * # every 3 minutes
+      - LDESSERVER_COMPACTIONDURATION=PT5M # keep only 5 minutes
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://broker-server/ldes/actuator/health"]
+      start_period: 45s
 
 
-  broker-database:
-    image: postgres:latest
+  broker-workbench:
+    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TOD: remove snapshot
     environment:
-      - POSTGRES_DB=${BROKER_POSTGRES_DB}
-      - POSTGRES_USER=${BROKER_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${BROKER_POSTGRES_PWD}
+      - SERVER_PORT=80
+    volumes:
+      - ./broker-workbench/application.yml:/ldio/application.yml:ro
+    ports:
+      - 9002:80
     networks:
+      - publisher-network
       - broker-network
+    depends_on:
+      broker-server:
+        condition: service_healthy
     healthcheck:
-      test: pg_isready -U ${BROKER_POSTGRES_USER} -d ${BROKER_POSTGRES_DB}
+      test: ["CMD", "wget", "-qO-", "http://broker-workbench/actuator/health"]
+      start_period: 5s

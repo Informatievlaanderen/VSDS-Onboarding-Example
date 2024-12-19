@@ -1,7 +1,3 @@
-
-ldes-server:
-  maintenance-cron: "-"  # no retention / compaction / deletion
-
 springdoc:
   swagger-ui:
     path: /admin/doc/v1/swagger
