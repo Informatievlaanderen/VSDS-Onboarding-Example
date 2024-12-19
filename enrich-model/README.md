@@ -37,7 +37,7 @@ services:
 The workbench configuration is trivial as well:
 ```yaml
   ldio-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
       - LOGGING_LEVEL_ROOT=INFO
@@ -205,15 +205,10 @@ curl http://localhost:9007/member?id=http%3A%2F%2Fexample.com%2Fpeople%2FSpideyB
 
 The result looks like this:
 ```text
-@prefix :       <http://schema.org/> .
-@prefix cars:   <http://example.com/cars/> .
-@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix schema: <http://schema.org/> .
-
-cars:volvo-xc40  rdf:type  schema:car;
-        schema:brand     "Volvo";
-        schema:maxSpeed  180;
-        schema:model     "XC40" .
+PREFIX :       <http://schema.org/>
+PREFIX cars:   <http://example.com/cars/>
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX schema: <http://schema.org/>
 
 <http://example.com/people/SpideyBoy>
         rdf:type         schema:Person;
@@ -225,6 +220,11 @@ cars:ferrari-f40  rdf:type  schema:car;
         schema:brand     "Ferrari";
         schema:maxSpeed  315;
         schema:model     "F40" .
+
+cars:volvo-xc40  rdf:type  schema:car;
+        schema:brand     "Volvo";
+        schema:maxSpeed  180;
+        schema:model     "XC40" .
 ```
 
 ## The End is Near
