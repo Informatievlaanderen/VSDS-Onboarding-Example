@@ -62,7 +62,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-postgre
 
 
   server-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TODO: remove snapshot
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
     ports:
@@ -85,7 +85,7 @@ At the Data Client side we only need a workbench (`client-workbench`) which we c
 
 ```yaml
   client-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TODO: remove snapshot
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
     networks:

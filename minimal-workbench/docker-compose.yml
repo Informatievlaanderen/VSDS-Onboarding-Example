@@ -5,7 +5,7 @@ networks:
 services:
 
   ldio-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TODO: remove snapshot
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=8080
     ports:

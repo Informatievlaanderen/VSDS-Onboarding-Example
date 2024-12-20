@@ -15,7 +15,7 @@ services:
 
 
   ldio-workbench:
-    image: ldes/ldi-orchestrator:2.12.0-SNAPSHOT # TODO: remove snapshot
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
       - LOGGING_LEVEL_ROOT=INFO
