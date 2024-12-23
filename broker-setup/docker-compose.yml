@@ -29,7 +29,7 @@ services:
 
 
   publisher-server:
-    image: ldes/ldes-server:3.6.0
+    image: ldes/ldes-server:3.6.1
     volumes:
       - ./publisher-server/application.yml:/application.yml:ro
     ports:
@@ -92,8 +92,7 @@ services:
 
 
   broker-server:
-    # image: ldes/ldes-server:3.6.1
-    image: ghcr.io/informatievlaanderen/ldes-server:20241219151729 # TODO: use 3.6.1 (fixes frag ref key)
+    image: ldes/ldes-server:3.6.1
     volumes:
       - ./broker-server/application.yml:/application.yml:ro
     ports:
