@@ -93,26 +93,10 @@ broker-database:
     test: pg_isready -U ${BROKER_POSTGRES_USER} -d ${BROKER_POSTGRES_DB}
 ```
 
-For the Data Publisher, apart from some renaming here and there, both the workbench and server configurations are identical to those from the [Publishing as a standard open linked data model](./advanced-conversion/README.md) tutorial. We use the [same conversion steps](./publisher-workbench/seed/park-n-ride-pipeline.yml) in the workbench and the same setup for the server:
+For the Data Publisher, apart from some renaming here and there, both the workbench and server configurations are similar to those from the [Publishing as a standard open linked data model](./advanced-conversion/README.md) tutorial. We use the [same conversion steps](./publisher-workbench/seed/park-n-ride-pipeline.yml) in the workbench and the same setup for the server:
 ```yaml
-publisher-workbench:
-  image: ldes/ldi-orchestrator:2.12.0
-  environment:
-    - SERVER_PORT=80
-  volumes:
-    - ./publisher-workbench/application.yml:/ldio/application.yml:ro
-  ports:
-    - 9004:80
-  networks:
-    - publisher-network 
-  depends_on:
-    publisher-server:
-      condition: service_healthy
-  healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://publisher-workbench/actuator/health"]
-
 publisher-server:
-  image: ldes/ldes-server:3.6.0
+  image: ldes/ldes-server:3.6.1
   volumes:
     - ./publisher-server/application.yml:/application.yml:ro
   ports:
@@ -135,31 +119,36 @@ publisher-server:
     - MANAGEMENT_TRACING_ENABLED=false
     - SPRING_TASK_SCHEDULING_POOL_SIZE=5
     - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
-    - LDESSERVER_MAINTENANCECRON=-  # no retention / compaction / deletion
+    - LDESSERVER_MAINTENANCECRON=0 0 12 * * * # daily at noon (UTC time)
     - LDESSERVER_COMPACTIONDURATION=P14D
   healthcheck:
     test: ["CMD", "wget", "-qO-", "http://publisher-server/ldes/actuator/health"]
-```
+    start_period: 45s
 
-### So Long, I’ve Been Looking Too Hard
-The Data Broker workbench is based on a LDES Client which replicates and synchronizes the LDES exposed by the Data Publisher LDES Server (`http://broker-server/ldes/occupancy`). Other than that, the workbench and server services are the same as usual:
-```yaml
-broker-workbench:
+
+publisher-workbench:
   image: ldes/ldi-orchestrator:2.12.0
   environment:
     - SERVER_PORT=80
   volumes:
-    - ./broker-workbench/application.yml:/ldio/application.yml:ro
+    - ./publisher-workbench/application.yml:/ldio/application.yml:ro
   ports:
-    - 9002:80
+    - 9004:80
   networks:
-    - publisher-network
-    - broker-network
+    - publisher-network 
+  depends_on:
+    publisher-server:
+      condition: service_healthy
   healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://broker-workbench/actuator/health"]
+    test: ["CMD", "wget", "-qO-", "http://publisher-workbench/actuator/health"]
+    start_period: 5s
+```
 
+### So Long, I’ve Been Looking Too Hard
+The Data Broker workbench is based on a LDES Client which replicates and synchronizes the LDES exposed by the Data Publisher LDES Server (`http://broker-server/ldes/occupancy`). Other than that, the workbench and server services are the same as usual (we did add retention, see [later](#ive-been-waiting-too-long)):
+```yaml
 broker-server:
-  image: ldes/ldes-server:3.6.0
+  image: ldes/ldes-server:3.6.1
   volumes:
     - ./broker-server/application.yml:/application.yml:ro
   ports:
@@ -180,11 +169,31 @@ broker-server:
     - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
     - MANAGEMENT_TRACING_ENABLED=false
     - SPRING_TASK_SCHEDULING_POOL_SIZE=5
-    - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
-    - LDESSERVER_MAINTENANCECRON=-  # no retention / compaction / deletion
-    - LDESSERVER_COMPACTIONDURATION=P14D
+    - LDESSERVER_FRAGMENTATIONCRON=*/30 * * * * * # every 30 seconds
+    - LDESSERVER_MAINTENANCECRON=0 */3 * * * * # every 3 minutes
+    - LDESSERVER_COMPACTIONDURATION=PT5M # keep only 5 minutes
   healthcheck:
     test: ["CMD", "wget", "-qO-", "http://broker-server/ldes/actuator/health"]
+    start_period: 45s
+
+
+broker-workbench:
+  image: ldes/ldi-orchestrator:2.12.0
+  environment:
+    - SERVER_PORT=80
+  volumes:
+    - ./broker-workbench/application.yml:/ldio/application.yml:ro
+  ports:
+    - 9002:80
+  networks:
+    - publisher-network
+    - broker-network
+  depends_on:
+    broker-server:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://broker-workbench/actuator/health"]
+    start_period: 5s
 ```
 
 > **Note** that the Data Broker exposes the LDES to your local system in order to allow us to verify it. The Data Publisher LDES is only available from within the private docker network as we do not need direct access to it.
@@ -226,11 +235,15 @@ The resulting [workbench pipeline](./broker-workbench/seed/client-pipeline.yml) 
 OK, we have not been completely honest with you: we did change the LDES view configuration of the Data Publisher a bit because in real-life you will never want to create a LDES which grows indefinitely, would you? We added a retention policy with a sliding window (of one year) on the LDES definition by adding a retention policy::
 ```text
 </occupancy> a ldes:EventStream ;
-	...
-  ldes:retentionPolicy [
-		a ldes:DurationAgoPolicy ;
-		tree:value "P1Y"^^xsd:duration
-	]	.
+  ...
+  ldes:eventSource [
+		a ldes:EventSource ;
+		ldes:retentionPolicy [
+			a ldes:DurationAgoPolicy ;
+			tree:value "P9M"^^xsd:duration
+		]
+	]
+.
 ```
 This will ensure that members older than one year are effectively deleted by the background maintenance task. As said [earlier](#organise-every-other-day-i-organise), this allows a Data Client which starts following the LDES to always have a history of data. Now, we can leave things this way and consequently a view will also provide access to all existing members for as long as they are not deleted. However, we can choose to add a retention policy on the view as well to offer less data. Adding such a retention policy is again very simple as we only need to add the following to a [view definition](./publisher-server/definitions/occupancy.by-page.ttl):
 ```text
@@ -263,10 +276,10 @@ ldes:retentionPolicy [
 ```
 > **Notes**:
 > * the `tree:fragmentationStrategy` is a list `(...)` containing one fragmentation `[...]` of type `tree:HierarchicalTimeBasedFragmentation` which groups together (_bucketizing_) members by property `tree:fragmentationPath dcterms:modified` organizing it in a structure up to `tree:maxGranularity "hour"`.
-> * we set the `tree:pageSize` of the view to 20 members which does not affect our structure nodes but does limit the number of members returned per page node.
+> * we set the `tree:pageSize` of the view to 50 members which does not affect our structure nodes but does limit the number of members returned per page node.
 > * for this view we chose to offer at most 7 minutes of data by definiting a sliding time window retention policy `ldes:DurationAgoPolicy` with the `tree:value` specified as a [ISO8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations).
 
-To allow retrieving a part of the data collection [by location](#around-the-world-around-the-world) we add a [by-location definition](./broker-server/definitions/occupancy.by-location.ttl). The relevant parts are:
+In addition, we add a [by-location definition](./broker-server/definitions/occupancy.by-location.ttl) to allow retrieving a part of the data collection [by location](#around-the-world-around-the-world). The relevant parts are:
 ```text
 tree:fragmentationStrategy ([
   a tree:GeospatialFragmentation ;
@@ -308,31 +321,17 @@ ldes:retentionPolicy [
 > * if we do not set the retention job to run frequently, we may end up with a lot more versions than we configured so please ensure you balance these correctly.
 
 ### Let Me Tell You ’Bout Hard Work
-Although typically we send our view definitions to the LDES server before ingesting our data collection this is _not_ actually needed. As soon as we have defined our LDES the server can start ingesting the members. But, unless we define a view, the ingested members are inaccessible. They will be ingested into the server's database and stay there forever without anyone being able to retrieve them. Not very useful. So we need to define at least one view. If this view does not specify a retention policy the data collection becomes available but will continue to grow indefinitely. At some point our storage and bandwidth costs will rise to an unacceptable amount and guess who will get fired?! OK, so we add a retention policy to our view. Crisis diverted! 
+Although typically we send our view definitions to the LDES server before ingesting our data collection this is _not_ actually needed. As soon as we have defined our LDES the server can start ingesting the members. But, unless we define a view, the ingested members are inaccessible. They will be ingested into the server's database and stay there forever without anyone being able to retrieve them. Not very useful. So we need to define at least one view. If this view does not specify a retention policy the data collection becomes available but will continue to grow indefinitely. At some point our storage and bandwidth costs will rise to an unacceptable amount and guess who will get fired?! OK, so we add a retention policy to our view as shown earlier. Crisis diverted! 
 
 So, we now know that we can add and remove views as we see fit at any time. Now what happens if we add multiple views to our server? How do the different retention policies interact? How long will our members be available in each view and when will they actually be removed from the server's database to save storage space?
 
-The rules are simple: when a retention policy of a view does not apply to a member (e. g. it is older than the view's retention time or it is not part of the set of latest versions) then that member is removed from that view's fragment(s). The retention step is responsible for checking the retention policies and removing the members from the view (i.e. all view fragments which contain that member). Removing members from a view's fragment(s) results in half-empty or even empty fragments. These empty fragments are removed and the partially filled fragments are joined together. This is done by the compaction step. Finally, the deletion step runs to cleanup all expired members and fragments. This is needed to actually release storage space.
+The rules are simple: when all retention policies of a view do not apply to a member (e. g. it is older than the view's retention time or it is not part of the set of latest versions) then that member is removed from all fragments for that view. The retention step is responsible for checking the retention policies and removing the members from the view. Removing members from a view's fragment(s) results after some time in half-empty or even empty fragments. These empty fragments are marked as expired and the partially filled fragments are joined together. This is done by the compaction step. Finally, the deletion step runs to cleanup all expired fragments.
 
-For this tutorial we took the retention periods of the views:
-* three months for the by-location, 
-* 15 versions which boils down to 30 minutes if we get a new version every 2 minutes
-* a week for the by-reference
+You may wonder when the members are actually deleted. In fact, while the view definition defines the retention policies for the members in a view and as such defines how long a member is part of a view, the event source definition of the LDES itself specifies the retention policies for the members and defines how long a member is physically stored. So the retention policies on the LDES (event source) are needed to actually release storage space. And as you may expect, the deletion step will cleanup all expired members as well.
 
-and used both the longest time-based and the version-based one:
-```text
-ldes:retentionPolicy [
-  a ldes:DurationAgoPolicy ;
-  tree:value "PT7M"^^xsd:duration ;
-],[
-  a ldes:LatestVersionSubset ;
-  ldes:amount 3 ;
-]
-```
+> **Note** that if you mark the retention of members in the LDES (event source) to be shorter that the retention on its views, obviously the members will be physically deleted and as such also removed from all views of that LDES. So, please ensure you define your event source policies to keep the members at least as long as needed by the LDES views.
 
-Summarized, you need to create at least one view to allow retrieving a data collection. You need to add a retention policy to the LDES in order to ensure members can be actually deleted (i. e. if only the views have a retention policy, members are never deleted!). The retention policies keeps your storage under control by allowing removal of members from the view's fragments and from the database. Retention policy enforcement, fragment compaction and member deletion are done in a background maintenance task which is scheduled according to a customizable schedule. 
-
-The background task has a predefined schedule but we can change the default configuration in the LDES Server [application configuration](./publisher-server/application.yml) using a [cron pattern](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/support/CronExpression.html#method-detail). Here is an example:
+The background task running the above steps (retention, compaction and deletion) has a predefined schedule but we can change the default configuration in the LDES Server [application configuration](./publisher-server/application.yml) using a [cron pattern](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/support/CronExpression.html#method-detail). Here is an example:
 ```yaml
 ldes-server:
 
@@ -344,6 +343,39 @@ ldes-server:
 ```
 
 > **Note** that we also added a `compaction-duration` which defines how long the obsolete sparsely filled fragments are kept around before actually being deleted. We need to do this to ensure that any Data Client following a view (at the fragments being compacted) had enough time to catch up with the stream so that we can safely remove the obsolete fragments without breaking some Data Client's flow.
+
+> **Note** that you need to balance the schedule configurations correctly as the steps put some load on your systems when the amount of members increases.
+
+Summarized, you need to create at least one view to allow retrieving a data collection. You need to add a retention policy to the LDES in order to ensure members can be actually deleted (i. e. if only the views have a retention policy, members are never deleted!). The retention policies keeps your storage under control by allowing removal of members from the view's fragments and from the database. Retention policy enforcement, fragment compaction and member deletion are done in a background maintenance task which is scheduled according to a customizable schedule.
+
+> **Note** that a view may contain more versions of an object or older members than specified until the retention is enforced by running the maintenance task as defined by its schedule.
+
+### Parole, Parole, Parole
+Enough theory, its show-time!
+
+For this tutorial we defined the retention periods of the views as follows:
+* for the by-location view we use 5 minutes
+* for the by-time view we use 7 minutes
+* for the by-reference view we keep the last 3 versions
+
+To ensure members are not physically deleted too soon, we used both the longest time-based and the version-based one, so keeping at least 3 versions of a member and keeping all members for at least 7 minutes:
+```text
+ldes:eventSource [
+  a ldes:EventSource ;
+  ldes:retentionPolicy [
+    a ldes:DurationAgoPolicy ;
+    tree:value "PT7M"^^xsd:duration ;
+  ],[
+    a ldes:LatestVersionSubset ;
+    ldes:amount 3 ;
+  ]
+]
+```
+To demonstrate all the aspects of retention, compaction and deletion we run our background job every 3 minutes and expire the sparse fragments after 5 minutes:
+```yaml
+- LDESSERVER_MAINTENANCECRON=0 */3 * * * * # every 3 minutes
+- LDESSERVER_COMPACTIONDURATION=PT5M # keep only 5 minutes
+```
 
 ## Launch Systems & Check Views
 
@@ -373,24 +405,27 @@ curl -X POST -H "content-type: application/yaml" http://localhost:9004/admin/api
 curl -X POST -H "content-type: application/yaml" http://localhost:9002/admin/api/v1/pipeline --data-binary @./broker-workbench/seed/client-pipeline.yml
 ```
 
-You can already check the existence of our publisher views and additional Data Broker views using:
+You can already check the existence of our additional Data Broker views using:
 ```bash
 clear
-curl http://localhost:9003/ldes/occupancy/by-page
 curl http://localhost:9001/ldes/occupancy/by-time
 curl http://localhost:9001/ldes/occupancy/by-location
 curl http://localhost:9001/ldes/occupancy/by-parking
 ```
 
-After a bit of time data will start appearing in these views. Replicating the history of the Data Publisher data collection will be almost instantaneous in our case because we just started the Data Publisher's systems. After that the synchronization happens almost immediately as well because the source data produces only 5 members per minute. Basically, you should see all views grow by at most 5 members every minute (as the data may not have changed). E.g.:
+After a bit of time data will start appearing in these views. Replicating the history of the Data Publisher data collection will be almost instantaneous in our case because we just started the Data Publisher's systems. After that the synchronization happens almost immediately as well because the source data produces at most 5 members per minute. Basically, you should see all views grow by at most 5 members every minute (as the data may not have changed). E.g.:
 
 ```bash
 curl http://localhost:9001/ldes/occupancy/by-parking?parking-lot=
+
+# following the tree:node in the tree:relation eventually results in a fragment like this:
+curl "http://localhost:9001/ldes/occupancy/by-parking?parking-lot=https%3A%2F%2Fstad.gent%2Fnl%2Fmobiliteit-openbare-werken%2Fparkeren%2Fpark-and-ride-pr%2Fpr-loopexpo&pageNumber=1"
 ```
 
->  **Note** that in order to show you the retention, compaction and deletion in action we have lowered the retention periods to minutes and increased the frequency of the background tasks. Make sure you balance the schedule configurations correctly as these tasks put some load on your systems as the amount of members increases.
-
-> **TODO**: test and explain retention stuff
+>  **Notes**:
+> * in order to show you the retention, compaction and deletion in action we have lowered the retention periods to minutes and increased the frequency of the background tasks
+> * keep the system running for at least 7 minutes to see the members disappear from the views and from the system
+> * make sure that you hard refresh (press `CTRL-SHIFT F5`) your browser window to by-pass the browser page caching
 
 ## Cleanup
 To stop all systems:
