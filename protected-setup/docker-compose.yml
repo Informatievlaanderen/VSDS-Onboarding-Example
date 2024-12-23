@@ -7,10 +7,9 @@ networks:
 services:
 
   ldes-postgresdb:
-    container_name: protected-setup-server_ldes-postgresdb
     image: postgres:latest
     environment:
-      - POSTGRES_DB=protected-setup
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PWD}
     ports:
@@ -20,10 +19,7 @@ services:
 
 
   ldes-server:
-    container_name: protected-setup-server_ldes-server
-    image: ldes/ldes-server:3.1.0-SNAPSHOT
-    volumes:
-      - ./ldes-server/application.yml:/application.yml:ro
+    image: ldes/ldes-server:3.6.0
     ports:
       - 9003:80
     networks:
@@ -31,24 +27,29 @@ services:
     depends_on:
       - ldes-postgresdb
     environment:
+      - SERVER_PORT=80
       - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
       - SIS_DATA=/tmp
       - SERVER_SERVLET_CONTEXTPATH=
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/protected-setup
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
       - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
+      - MANAGEMENT_TRACING_ENABLED=false
+      - SPRING_TASK_SCHEDULING_POOL_SIZE=5
+      - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
+      - LDESSERVER_MAINTENANCECRON=-  # no retention / compaction / deletion
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
       interval: 12s
       timeout: 3s
       retries: 20
 
+
   server-workbench:
-    container_name: protected-setup-server_server-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./server-workbench/application.yml:/ldio/application.yml:ro
+    image: ldes/ldi-orchestrator:2.12.0
+    environment:
+      - SERVER_PORT=80
     ports:
       - 9004:80
     networks:
@@ -60,12 +61,9 @@ services:
 
 
   client-workbench:
-    container_name: protected-setup-server_client-workbench
-    image: ldes/ldi-orchestrator:2.5.1
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
-    volumes:
-      - ./client-workbench/application.yml:/ldio/application.yml:ro
     networks:
       - protected-setup-client
     ports:
@@ -79,7 +77,6 @@ services:
 
 
   sink-system:
-    container_name: protected-setup-server_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
       - 9007:80

@@ -5,19 +5,15 @@ networks:
 services:
 
   ldio-workbench:
-    container_name: basic-client_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./application.yml:/ldio/application.yml:ro
+    image: ldes/ldi-orchestrator:2.12.0
     network_mode: "host"
     environment:
-      - LDIO_WORKBENCH_PORT=9006
+      - SERVER_PORT=9006
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
 
 
   sink-system:
-    container_name: basic-client_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
       - 9007:80

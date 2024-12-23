@@ -1,10 +1,4 @@
-ldes-server:
-  host-name: ${LDES_SERVER_HOST_NAME}
-  retention-cron: "0 0 2 * * *" # at 02:00:00 daily
-  compaction-cron: "0 0 4 * * 7" # at 04:00:00 weekly on Sundays
-  compaction-duration: P5D
-  deletion-cron: "0 0 3 1 * *" # at 03:00:00 monthly on the 1st
-
-management:
-  tracing:
-    enabled: false
+logging:
+  level:
+    root: WARN
+    be.vlaanderen.informatievlaanderen.ldes.server.Application: INFO

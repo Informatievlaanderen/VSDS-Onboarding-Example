@@ -1,2 +1,0 @@
-server:
-  port: ${LDIO_WORKBENCH_PORT}

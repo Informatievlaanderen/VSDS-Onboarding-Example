@@ -21,106 +21,97 @@ But first, let us setup the system without access limitation first to ensure eve
 At the Data Publisher side we need a database for the LDES Server (`ldes-postgresdb`), the LDES Server itself (`ldes-server`) and a workbench to feed the LDES Server (`server-workbench`). We can basically copy/paste the services from the [advanced conversion docker compose](../advanced-conversion/docker-compose.yml) file:
 
 ```yaml
-ldes-postgresdb:
-  container_name: protected-setup-server_ldes-postgresdb
-  image: postgres:latest
-  environment:
-    - POSTGRES_DB=protected-setup
-    - POSTGRES_USER=${POSTGRES_USER}
-    - POSTGRES_PASSWORD=${POSTGRES_PWD}
-  ports:
-    - 5432:5432
-  networks:
-    - protected-setup-server
+  ldes-postgresdb:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PWD}
+    ports:
+      - 5432:5432
+    networks:
+      - protected-setup-server
 
 
-ldes-server:
-  container_name: protected-setup-server_ldes-server
-  image: ldes/ldes-server:3.1.0-SNAPSHOT
-  volumes:
-    - ./ldes-server/application.yml:/application.yml:ro
-  ports:
-    - 9003:80
-  networks:
-    - protected-setup-server
-  depends_on:
-    - ldes-postgresdb
-  environment:
-    - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
-    - SIS_DATA=/tmp
-    - SERVER_SERVLET_CONTEXTPATH=
-    - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/protected-setup
-    - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-    - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
-    - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
-  healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
-    interval: 12s
-    timeout: 3s
-    retries: 20
+  ldes-server:
+    image: ldes/ldes-server:3.6.0
+    ports:
+      - 9003:80
+    networks:
+      - protected-setup-server
+    depends_on:
+      - ldes-postgresdb
+    environment:
+      - SERVER_PORT=80
+      - LDESSERVER_HOSTNAME=http://host.docker.internal:9003
+      - SIS_DATA=/tmp
+      - SERVER_SERVLET_CONTEXTPATH=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ldes-postgresdb:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PWD}
+      - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
+      - MANAGEMENT_TRACING_ENABLED=false
+      - SPRING_TASK_SCHEDULING_POOL_SIZE=5
+      - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
+      - LDESSERVER_MAINTENANCECRON=-  # no retention / compaction / deletion
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://ldes-server/actuator/health"]
+      interval: 12s
+      timeout: 3s
+      retries: 20
 
 
-server-workbench:
-  container_name: protected-setup-server_server-workbench
-  image: ldes/ldi-orchestrator:2.5.1
-  volumes:
-    - ./server-workbench/application.yml:/ldio/application.yml:ro
-  ports:
-    - 9004:80
-  networks:
-    - protected-setup-server 
-  healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
-  depends_on:
-    - ldes-server
+  server-workbench:
+    image: ldes/ldi-orchestrator:2.12.0
+    environment:
+      - SERVER_PORT=80
+    ports:
+      - 9004:80
+    networks:
+      - protected-setup-server 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://server-workbench/actuator/health"]
+    depends_on:
+      - ldes-server
 ```
 
 > **Notes**:
-> * for clarity we renamed the network as well as the container names
+> * for clarity we renamed the network as well as removed the container names
 > * we also renamed the workbench in order to stress that this is the workbench which feeds the LDES Server
 > * we moved the configuration files to organize the setup a bit
-> * we added an environment variable `LDESSERVER_HOSTNAME` to allow changing the LDES Server hostname
+> * we changed the environment variable `LDESSERVER_HOSTNAME` to access the LDES Server from the client network
 
 At the Data Client side we only need a workbench (`client-workbench`) which we can borrow from the [minimal client docker compose](../minimal-client/docker-compose.yml) file and a sink system (for which we can use a [Test Message Sink](https://github.com/Informatievlaanderen/VSDS-LDES-E2E-message-sink)):
 
 ```yaml
-client-workbench:
-  container_name: protected-setup-server_client-workbench
-  image: ldes/ldi-orchestrator:2.5.1
-  environment:
-    - SERVER_PORT=80
-  volumes:
-    - ./client-workbench/application.yml:/ldio/application.yml:ro
-  networks:
-    - protected-setup-client
-  ports:
-    - 9006:80
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
-  depends_on:
-    - sink-system
-  healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
+  client-workbench:
+    image: ldes/ldi-orchestrator:2.12.0
+    environment:
+      - SERVER_PORT=80
+    networks:
+      - protected-setup-client
+    ports:
+      - 9006:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - sink-system
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://client-workbench/actuator/health"]
 
 
-sink-system:
-  container_name: protected-setup-server_sink-system
-  image: ghcr.io/informatievlaanderen/test-message-sink:latest
-  ports:
-    - 9007:80
-  networks:
-    - protected-setup-client
-  environment:
-    - MEMORY=true
-    - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot
+  sink-system:
+    image: ghcr.io/informatievlaanderen/test-message-sink:latest
+    ports:
+      - 9007:80
+    networks:
+      - protected-setup-client
+    environment:
+      - MEMORY=true
+      - MEMBER_TYPE=http://schema.mobivoc.org/#ParkingLot
 ```
 
-> **Notes**
-> * we renamed the container and the service
-> * we moved the configuration files
-> * we added a profile to prevent the client workbench to start ahead of time
-
-> **Note** that the client workbench uses the network of the host which is completely disconnected from the internal docker network used by the LDES Server and its database and workbench. The LDES Client component therefore needs to use the host name (`localhost`) and exposed server port (`9003`) to access the LDES. That is why we have configured both the `LDESSERVER_HOSTNAME` and the `LDES_SERVER_URL` to start with `http://localhost:9003/`.
+> **Note** that the client workbench uses its own network which is completely disconnected from the network used by the LDES Server and its database and workbench. The LDES Client component therefore needs to use docker host name (`host.docker.internal`) and exposed server port (`9003`) to access the LDES.
 
 What we have now is illustrated in the following system container diagram:
 ![container diagram](./uml/unprotected-container.png)
@@ -145,9 +136,7 @@ curl -X POST -H "content-type: application/yaml" "http://localhost:9006/admin/ap
 # check the sink system
 while true; do curl "http://localhost:9007"; echo ""; sleep 15; done
 ```
-Press `CTRL-C` to stop following the member count in the sink system.
-
-Once you have verified that the members appear in the sink (this may take a couple of minutes) you can shutdown the systems and remove the private network for now using:
+Once you have verified that the members appear in the sink (this may take a couple of minutes) you can press `CTRL-C` to stop following the member count in the sink system. After that you can shutdown the systems and remove the private network for now using:
 ```bash
 docker compose down
 ```
@@ -175,6 +164,7 @@ services:
 > **Note** that we expose our swagger UI on the 'admin' API so we can protect it together with the rest of the admin API later.
 
 The `path` allows us to define the endpoint where the API information is visualized and the `urlsPrimaryName` allows us to choose which collection of APIs are displayed by default when we browse to the swagger UI endpoint. Now, in order to see it, we need to launch the server again:
+
 ```bash
 clear
 docker compose -f docker-compose.yml -f expose-swagger.yml up -d --wait
@@ -191,6 +181,7 @@ Now, if we switch to the admin API (select `admin` in the top right dropdown) we
 > **Note** that an API key is not a very secure way of protecting an API. If somebody gets a hold of it, it can be misused. Therefore you should keep it a secret and use HTTPS instead of HTTP communication to prevent somebody sniffing the network and gaining access to the API key.
 
 Currently we do not expose any metadata for our LDES. Without going into details of DCAT, we will simply add the metadata ([catalog](./definitions/metadata/catalog.ttl), [LDES metadata](./definitions/metadata/occupancy.ttl) and [view metadata](./definitions/metadata/occupancy.by-page.ttl)) to our LDES Server by means of the admin API. We have kept the DCAT itself to the bare minimum as that is beyond the scope of the tutorial. It will be sufficient for our purpose. To try this please run:
+
 ```bash
 # upload LDES & view definitions
 curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/eventstreams" -d "@./definitions/occupancy.ttl"
@@ -204,46 +195,57 @@ curl -X POST -H "content-type: text/turtle" "http://localhost:9003/admin/api/v1/
 
 Now you can get the full DCAT if you request the root http://localhost:9003. It is a mix of the metadata definitions which we uploaded and server generated data, resulting in something like this:
 ```text
-@prefix by-page:   <http://host.docker.internal:9003/occupancy/by-page/> .
-@prefix dcat:      <http://www.w3.org/ns/dcat#> .
-@prefix ldes:      <https://w3id.org/ldes/> .
-@prefix occupancy: <http://host.docker.internal:9003/occupancy/> .
-@prefix rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix terms:     <http://purl.org/dc/terms/> .
-@prefix tree:      <https://w3id.org/tree/> .
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX geo:  <http://www.opengis.net/ont/geosparql#>
+PREFIX ldes: <https://w3id.org/ldes#>
+PREFIX m8g:  <http://data.europa.eu/m8g/>
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh:   <http://www.w3.org/ns/shacl#>
+PREFIX shsh: <http://www.w3.org/ns/shacl-shacl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX tree: <https://w3id.org/tree#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+<http://host.docker.internal:9003/occupancy>
+        rdf:type         dcat:Dataset;
+        dct:conformsTo   <https://w3id.org/tree/specification> , <https://w3id.org/ldes/specification>;
+        dct:description  "LDES containing the occupancy of the various park+rides in Ghent in real time"@en;
+        dct:identifier   "http://host.docker.internal:9003/occupancy"^^rdfs:Literal;
+        dct:title        "Real time occupancy P+R (Gent) as LDES"@en .
 
 <http://host.docker.internal:9003>
-        rdf:type           dcat:Catalog;
-        terms:description  "Offers an overview of the dataset(s) and data service(s) needed for the tutorial 'Publishing And Accessing a Protected LDES'."@en;
-        terms:identifier   "9aec5b70-570d-47bd-9453-a76a20245543"^^rdfs:Literal;
-        terms:title        "Catalog for Publishing And Accessing a Protected LDES"@en;
-        dcat:dataset       <http://host.docker.internal:9003/occupancy>;
-        dcat:service       by-page:description .
+        rdf:type         dcat:Catalog;
+        dct:description  "Offers an overview of the dataset(s) and data service(s) needed for the tutorial 'Publishing And Accessing a Protected LDES'."@en;
+        dct:identifier   "e9dd428a-0a81-4cdb-ba2f-a2d114982a27"^^rdfs:Literal;
+        dct:title        "Catalog for Publishing And Accessing a Protected LDES"@en;
+        dcat:dataset     <http://host.docker.internal:9003/occupancy>;
+        dcat:service     <http://host.docker.internal:9003/occupancy/by-page/description> .
 
 <https://semiceu.github.io/LinkedDataEventStreams/>
         rdf:type  rdfs:Resource .
 
-<http://host.docker.internal:9003/occupancy>
-        rdf:type           dcat:Dataset;
-        terms:conformsTo   tree:specification , ldes:specification;
-        terms:description  "LDES containing the occupancy of the various park+rides in Ghent in real time"@en;
-        terms:identifier   "http://host.docker.internal:9003/occupancy"^^rdfs:Literal;
-        terms:title        "Real time occupancy P+R (Gent) as LDES"@en .
+<https://w3id.org/tree/specification>
+        rdf:type  dct:Standard .
 
-tree:specification  rdf:type  terms:Standard .
+<https://w3id.org/ldes/specification>
+        rdf:type  dct:Standard .
 
-by-page:description  rdf:type     dcat:DataService;
-        terms:description         "Paged view for the occupancy of the various park+rides in Ghent in real time"@en;
-        terms:identifier          "http://host.docker.internal:9003/occupancy/by-page"^^rdfs:Literal;
-        terms:title               "Real time occupancy P+R (Gent) by page"@en;
+<http://host.docker.internal:9003/occupancy/by-page>
+        rdf:type  rdfs:Resource .
+
+<http://host.docker.internal:9003/occupancy/by-page/description>
+        rdf:type                  dcat:DataService;
+        dct:description           "Paged view for the occupancy of the various park+rides in Ghent in real time"@en;
+        dct:identifier            "http://host.docker.internal:9003/occupancy/by-page"^^rdfs:Literal;
+        dct:title                 "Real time occupancy P+R (Gent) by page"@en;
         dcat:endpointDescription  <https://semiceu.github.io/LinkedDataEventStreams/>;
-        dcat:endpointURL          occupancy:by-page;
+        dcat:endpointURL          <http://host.docker.internal:9003/occupancy/by-page>;
         dcat:servesDataset        <http://host.docker.internal:9003/occupancy> .
-
-ldes:specification  rdf:type  terms:Standard .
-
-occupancy:by-page  rdf:type  rdfs:Resource .
 ```
 
 As said before, we want this metadata to be publicly available, while limiting access to the admin API only to ourselves and the LDES & the view to a couple of well-known clients, all by means of a unique API key. You can create these keys using one of the free online GUID generators (e.g. https://www.uuidgenerator.net/guid) or a password generator (e.g. https://www.avast.com/random-password-generator), etc.
@@ -254,7 +256,6 @@ First we need to create the reverse proxy service in the additional [docker comp
 services:
   reverse-proxy:
     image: nginx:stable
-    container_name: protected-setup-server_reverse-proxy
     ports:
       - 9005:8080
     volumes:
@@ -331,7 +332,6 @@ curl -X POST -i -H "content-type: text/turtle" -d "@./data/member.ttl" "http://l
 curl -X POST -i -H "content-type: text/turtle" -d "@./data/member.ttl" "http://localhost:9005/feed/occupancy" -H "x-api-key: admin-secret"
 ```
 All calls should fail with a forbidden (HTTP 403).
-> **Note** that it would be better to return method not allowed (HTTP 405) but that seems to be a challenge in this specific reverse proxy configuration.
 
 One final thing to test is if we can POST to the admin endpoint, e.g. to define a LDES or add metadata.
 ```bash
@@ -368,7 +368,6 @@ services:
 
   reverse-proxy:
     image: nginx:stable
-    container_name: protected-setup-server_reverse-proxy
     ports:
       - 9005:8080
     volumes:
@@ -426,9 +425,9 @@ while true; do curl "http://localhost:9007"; echo ""; sleep 15; done
 > * provide our admin x-api-key for these requests, and
 > * use a different pipeline (`protected-client-pipeline`).
 
-Press `CTRL-C` to stop following the member count in the sink system.
-
 It all goes well (and it should!) you will see the LDES members appear in the sink.
+
+Press `CTRL-C` to stop following the member count in the sink system.
 
 ## It's Been a Long Day
 We have shown you how to enable the swagger UI, how to provide metadata for your LDES views and, of course, how to access a protected LDES. In addition we have shown you how you can protect a LDES using a API key but if you require a stronger way of securing access have a look at other authentication and authorization mechanisms. The [documentation](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/ldio/ldio-core/ldio-http-requester) explains how to configure the LDES client in case you need to access an OAuth2/OpenID protected LDES.

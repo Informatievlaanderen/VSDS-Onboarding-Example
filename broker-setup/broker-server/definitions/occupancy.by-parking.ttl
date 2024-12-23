@@ -15,6 +15,6 @@
 		tree:pageSize "15"^^xsd:integer ;
 		ldes:retentionPolicy [
 			a ldes:LatestVersionSubset ;
-			ldes:amount 15 ;
+			ldes:amount 3 ;
 		]
 	] .

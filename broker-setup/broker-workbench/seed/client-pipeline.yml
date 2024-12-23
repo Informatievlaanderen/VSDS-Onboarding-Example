@@ -1,0 +1,41 @@
+# This is a pipeline for demonstrating how to setup a pipeline to follow an existing LDES as a Data Broker
+name: client-pipeline
+description: "Replicates & synchronizes an existing LDES view, adds a location to each member and sends to the broker LDES Server"
+
+input:
+  name: Ldio:LdesClient
+  config:
+    urls: 
+      - http://publisher-server/ldes/occupancy/by-page
+    sourceFormat: application/rdf+protobuf
+
+transformers:
+  - name: Ldio:SparqlConstructTransformer
+    config:
+      query: |
+        PREFIX rdf:          <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX mv:           <http://schema.mobivoc.org/#>
+        PREFIX geo:          <http://www.w3.org/2003/01/geo/wgs84_pos#>
+        PREFIX locn:         <http://www.w3.org/ns/locn#>
+        PREFIX sf:           <http://www.opengis.net/ont/sf#>
+        PREFIX geosparql:    <http://www.opengis.net/ont/geosparql#>
+        PREFIX spatial-f:    <http://jena.apache.org/function/spatial#>
+
+        CONSTRUCT {
+          ?id locn:geometry ?geometry .
+          ?geometry a sf:Point ; geosparql:asWKT ?wkt .
+        } WHERE {
+          ?id rdf:type mv:ParkingLot .
+          ?id geo:lat ?lat .
+          ?id geo:long ?long .
+          bind(bnode() as ?geometry) .
+          bind(spatial-f:convertLatLon(?lat, ?long) as ?wkt) .
+        }
+      infer: true
+
+outputs:
+  - name: Ldio:HttpOut
+    config:
+      endpoint: http://broker-server/ldes/occupancy
+      rdf-writer:
+        content-type: application/rdf+protobuf

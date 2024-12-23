@@ -71,20 +71,17 @@ outputs:
 
 The [docker compose](./docker-compose.yml) file isn't all that scary either. We just need a workbench service which looks like this:
 ```yaml
-  ldio-workbench:
-    container_name: basic-client_ldio-workbench
-    image: ldes/ldi-orchestrator:2.5.1
-    volumes:
-      - ./application.yml:/ldio/application.yml:ro
-    environment:
-      - LDIO_WORKBENCH_PORT=9006
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
-    network_mode: "host"
+ldio-workbench:
+  image: ldes/ldi-orchestrator:2.12.0
+  network_mode: "host"
+  environment:
+    - SERVER_PORT=9006
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://localhost:9006/actuator/health"]
 ```
-We give the container a name and use a recent [LDIO image](https://hub.docker.com/r/ldes/ldi-orchestrator/tags) from docker hub. We provide the workbench configuration to the container by volume mapping it (read-only). We also define an environment variable for the LDIO Workbench port and a health check which allows us to wait that the workbench to be fully initialized and ready to accept pipelines.
+We use a recent [LDIO image](https://hub.docker.com/r/ldes/ldi-orchestrator/tags) from docker hub. We define an environment variable for the LDIO Workbench server port and a health check which allows us to wait that the workbench to be fully initialized and ready to accept pipelines.
 
-Hmmm, what is that last line `network_mode: "host"` all about? Well, as stated before, the links in the LDES nodes will be absolute URLs as defined by the LDES Server configuration which in this case is `http://localhost:9003/ldes`. Because we have exposed the LDES Server to the host system (basically your system) you can request the LDES view and all the nodes from your (host) system just fine. However, the `localhost` is a special name which always resolves to IP address 127.0.0.1 as it maps the the loopback adapter of your network card. Essentially, if using its own network, when the LDES Client tries to request a LDES node located on `localhost` it will get back it's loopback address 127.0.0.1 instead of the IP address of the LDES Server. So, the trick we use here is to let the workbench containing our LDES Client share the network of your system (the host) allowing it to resolve to the host network stack and then because of the docker port mapping, your docker will do its magic and forward the HTTP request to the LDES Server container. This is a bit of hocus-pocus that we need in this tutorial because we run our LDES Server locally and do not expose it using a domain name. In real-life you will not have to do this. In fact, if you would use a LDES which is hosted on the web in this tutorial you could comment out or remove the last line.
+Hmmm, what is that line `network_mode: "host"` all about? Well, as stated before, the links in the LDES nodes will be absolute URLs as defined by the LDES Server configuration which in this case is `http://localhost:9003/ldes`. Because we have exposed the LDES Server to the host system (basically your system) you can request the LDES view and all the nodes from your (host) system just fine. However, the `localhost` is a special name which always resolves to IP address 127.0.0.1 as it maps the the loopback adapter of your network card. Essentially, if using its own network, when the LDES Client tries to request a LDES node located on `localhost` it will get back it's loopback address 127.0.0.1 instead of the IP address of the LDES Server. So, the trick we use here is to let the workbench containing our LDES Client share the network of your system (the host) allowing it to resolve to the host network stack and then because of the docker port mapping, your docker will do its magic and forward the HTTP request to the LDES Server container. This is a bit of hocus-pocus that we need in this tutorial because we run our LDES Server locally and do not expose it using a domain name. In real-life you will not have to do this. In fact, if you would use a LDES which is hosted on the web in this tutorial you could comment out or remove the line.
 
 We also define our sink system in the Docker compose file:
 ```yaml
@@ -96,7 +93,6 @@ services:
   ...
 
   sink-system:
-    container_name: protected-setup-server_sink-system
     image: ghcr.io/informatievlaanderen/test-message-sink:latest
     ports:
       - 9007:80
@@ -121,13 +117,13 @@ curl -X POST -H "content-type: application/yaml" http://localhost:9006/admin/api
 
 Looking at the server workbench docker log file, you can verify which members are being created:
 ```bash
-docker logs -f $(docker ps -q -f "name=advanced-conversion_ldio-workbench$")
+docker logs -f $(docker ps -q -f "name=advanced-conversion-ldio-workbench-1")
 ```
 > **Note** use `CTRL-C` to stop following the logs.
 
 Looking at the client workbench, you will see that the LDES Client starts following the LDES view:
 ```bash
-docker logs -f $(docker ps -q -f "name=basic-client_ldio-workbench$")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 will contain something like this:
 ```text

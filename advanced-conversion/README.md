@@ -461,7 +461,7 @@ After a bit of time, you will see something similar to this in the workbench doc
 
  To display and keep following the workbench log for updates you can execute the following:
 ```bash
-docker logs -f $(docker ps -q -f "name=ldio-workbench")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 Press `CTRL-C` to stop following the logs.
 
@@ -476,54 +476,63 @@ curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
 The last URL will contain our members, looking something like this (limited to one member):
 
 ```text
-@prefix ldes:             <https://w3id.org/ldes#> .
-@prefix park-and-ride-pr: <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/> .
-@prefix rdf:              <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs:             <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix terms:            <http://purl.org/dc/terms/> .
-@prefix tree:             <https://w3id.org/tree#> .
-@prefix wgs84_pos:        <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+PREFIX by-page:   <http://localhost:9003/ldes/occupancy/by-page/>
+PREFIX dcat:      <http://www.w3.org/ns/dcat#>
+PREFIX dct:       <http://purl.org/dc/terms/>
+PREFIX foaf:      <http://xmlns.com/foaf/0.1/>
+PREFIX geo:       <http://www.opengis.net/ont/geosparql#>
+PREFIX ldes:      <https://w3id.org/ldes#>
+PREFIX m8g:       <http://data.europa.eu/m8g/>
+PREFIX mobility:  <https://example.org/ns/mobility#>
+PREFIX mobivoc:   <http://schema.mobivoc.org/#>
+PREFIX occupancy: <http://localhost:9003/ldes/occupancy/>
+PREFIX owl:       <http://www.w3.org/2002/07/owl#>
+PREFIX prov:      <http://www.w3.org/ns/prov#>
+PREFIX rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:      <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema:    <http://schema.org/>
+PREFIX sh:        <http://www.w3.org/ns/shacl#>
+PREFIX shsh:      <http://www.w3.org/ns/shacl-shacl#>
+PREFIX skos:      <http://www.w3.org/2004/02/skos/core#>
+PREFIX tree:      <https://w3id.org/tree#>
+PREFIX wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+PREFIX xsd:       <http://www.w3.org/2001/XMLSchema#>
 
-<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2023-12-13T12:21:21+01:00>
-        rdf:type           <http://schema.mobivoc.org/#ParkingLot> ;
-        rdfs:label         "P+R The Loop" ;
-        terms:isVersionOf  park-and-ride-pr:pr-loopexpo ;
-        terms:modified     "2023-12-13T12:21:21+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
-        <http://schema.mobivoc.org/#capacity>
-                [ rdf:type  <http://schema.mobivoc.org/#Capacity> ;
-                  <http://schema.mobivoc.org/#totalCapacity>
-                          168
-                ] ;
-        <http://schema.mobivoc.org/#capacity>
-                [ rdf:type  <http://schema.mobivoc.org/#RealTimeCapacity> ;
-                  <http://schema.mobivoc.org/#currentValue>
-                          30
-                ] ;
-        <http://schema.mobivoc.org/#operatedBy>
-                [ rdf:type    terms:Agent , <http://schema.org/Organization> ;
-                  rdfs:label  "Mobiliteitsbedrijf Gent"
-                ] ;
-        <http://schema.mobivoc.org/#price>
-                [ rdf:type  <http://schema.org/PriceSpecification> ;
-                  <http://schema.mobivoc.org/#freeOfCharge>
-                          1
-                ] ;
-        <http://schema.mobivoc.org/#rateOfOccupancy>
-                82 ;
-        <http://schema.mobivoc.org/#url>
-                park-and-ride-pr:pr-loopexpo ;
-        <http://schema.org/openingHoursSpecification>
-                [ rdf:type    <http://schema.org/OpeningHoursSpecification> ;
+<http://localhost:9003/ldes/occupancy/by-page?pageNumber=1>
+        rdf:type      tree:Node;
+        dct:isPartOf  <http://localhost:9003/ldes/occupancy> .
+
+<https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal#2024-12-18T15:54:10+01:00>
+        rdf:type                 mobivoc:ParkingLot;
+        rdfs:label               "P+R Gentbrugge Arsenaal";
+        dct:isVersionOf          <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal>;
+        dct:modified             "2024-12-18T15:54:10+01:00"^^xsd:dateTime;
+        mobivoc:capacity         [ rdf:type              mobivoc:RealTimeCapacity;
+                                   mobivoc:currentValue  0
+                                 ];
+        mobivoc:capacity         [ rdf:type               mobivoc:Capacity;
+                                   mobivoc:totalCapacity  280
+                                 ];
+        mobivoc:operatedBy       [ rdf:type    dct:Agent , schema:Organization;
+                                   rdfs:label  "Mobiliteitsbedrijf Gent"
+                                 ];
+        mobivoc:price            [ rdf:type              schema:PriceSpecification;
+                                   mobivoc:freeOfCharge  1
+                                 ];
+        mobivoc:rateOfOccupancy  100;
+        mobivoc:url              <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal>;
+        schema:openingHoursSpecification
+                [ rdf:type    schema:OpeningHoursSpecification;
                   rdfs:label  "24/7"
-                ] ;
-        wgs84_pos:lat      "51.024483197"^^<http://www.w3.org/2001/XMLSchema#double> ;
-        wgs84_pos:long     "3.69519252261"^^<http://www.w3.org/2001/XMLSchema#double> .
+                ];
+        wgs84_pos:lat            "51.0325480691"^^xsd:double;
+        wgs84_pos:long           "3.7583663653"^^xsd:double .
 
 ...
 
 <http://localhost:9003/ldes/occupancy>
-        rdf:type     ldes:EventStream ;
-        tree:member  <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-loopexpo#2023-12-13T12:21:21+01:00>, ...
+        rdf:type     ldes:EventStream;
+        tree:member  <https://stad.gent/nl/mobiliteit-openbare-werken/parkeren/park-and-ride-pr/pr-gentbrugge-arsenaal#2024-12-18T15:54:10+01:00> ,  ...
 ...
 ```
 
@@ -574,7 +583,7 @@ curl "http://localhost:9003/ldes/occupancy/by-page?pageNumber=1"
 
 You can also simply look at the workbench docker logs file to verify that the members have been created and send to the LDES server:
 ```bash
-docker logs -f $(docker ps -q -f "name=ldio-workbench$")
+docker logs -f $(docker compose ps -q ldio-workbench)
 ```
 > **Note** use `CTRL-C` to stop following the logs.
 

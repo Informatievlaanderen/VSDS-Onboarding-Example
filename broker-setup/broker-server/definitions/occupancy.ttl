@@ -1,10 +1,22 @@
 @prefix dcterms:     <http://purl.org/dc/terms/> .
+@prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
 @prefix sh:          <http://www.w3.org/ns/shacl#> .
 @prefix ldes:        <https://w3id.org/ldes#> .
-@prefix tree:        <https://w3id.org/tree#>.
-@prefix mv:          <http://schema.mobivoc.org/#>
+@prefix tree:        <https://w3id.org/tree#> .
+@prefix mv:          <http://schema.mobivoc.org/#> .
 
 </occupancy> a ldes:EventStream ;
 	tree:shape [ a sh:NodeShape ] ;
 	ldes:timestampPath dcterms:modified ;
-	ldes:versionOfPath dcterms:isVersionOf .
+	ldes:versionOfPath dcterms:isVersionOf ;
+	ldes:eventSource [
+		a ldes:EventSource ;
+		ldes:retentionPolicy [
+			a ldes:DurationAgoPolicy ;
+			tree:value "PT7M"^^xsd:duration ;
+		],[
+			a ldes:LatestVersionSubset ;
+			ldes:amount 3 ;
+		]
+	]
+	.

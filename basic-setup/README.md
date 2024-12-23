@@ -49,7 +49,7 @@ After that we add a LDES Server as a service, point it to its configuration file
       - SPRING_BATCH_JDBC_INITIALIZESCHEMA=always
       - MANAGEMENT_TRACING_ENABLED=false
       - SPRING_TASK_SCHEDULING_POOL_SIZE=5
-      - LDESSERVER_FRAGMENTATIONCRON=${LDES_SERVER_FRAGMENTATION_CRON:-*/1 * * * * *}
+      - LDESSERVER_FRAGMENTATIONCRON=*/1 * * * * *
     volumes:
       - ./server/application.yml:/application.yml:ro
     ports:

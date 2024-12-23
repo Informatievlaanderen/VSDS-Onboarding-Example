@@ -1,5 +1,5 @@
 @prefix ldes:        <https://w3id.org/ldes#> .
-@prefix tree:        <https://w3id.org/tree#>.
+@prefix tree:        <https://w3id.org/tree#> .
 @prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
 @prefix ldes:        <https://w3id.org/ldes#> .
 
@@ -10,6 +10,6 @@
 		tree:pageSize "250"^^xsd:integer ;
 		ldes:retentionPolicy [
       a ldes:DurationAgoPolicy ;
-      tree:value "P5Y"^^xsd:duration ;
+      tree:value "P9M"^^xsd:duration
     ]
-] .
+  ] .
