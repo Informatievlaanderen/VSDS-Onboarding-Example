@@ -37,8 +37,7 @@ After that we add a LDES Server as a service, point it to its configuration file
 
 ```yaml
   ldes-server:
-    image: ldes/ldes-server:3.4.0-SNAPSHOT
-    environment:
+    image: ldes/ldes-server:3.6.1
       - SERVER_PORT=80
       - SIS_DATA=/tmp
       - SERVER_SERVLET_CONTEXTPATH=/ldes
@@ -66,7 +65,7 @@ Finally, we add a LDIO Workbench as a service. It too needs to have access to it
 
 ```yaml
   ldio-workbench:
-    image: ldes/ldi-orchestrator:2.9.0-SNAPSHOT
+    image: ldes/ldi-orchestrator:2.12.0
     environment:
       - SERVER_PORT=80
     volumes:
