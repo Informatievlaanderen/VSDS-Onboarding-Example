@@ -17,7 +17,7 @@ services:
 
 
   ldes-server:
-    image: ldes/ldes-server:3.6.0
+    image: ldes/ldes-server:3.6.1
     environment:
       - SERVER_PORT=80
       - SIS_DATA=/tmp

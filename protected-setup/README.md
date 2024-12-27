@@ -34,7 +34,7 @@ At the Data Publisher side we need a database for the LDES Server (`ldes-postgre
 
 
   ldes-server:
-    image: ldes/ldes-server:3.6.0
+    image: ldes/ldes-server:3.6.1
     ports:
       - 9003:80
     networks:
